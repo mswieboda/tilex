@@ -1,0 +1,17 @@
+name: tilex
+version: 0.1.0
+
+authors:
+  - Matt Swieboda <mswieboda@users.noreply.github.com>
+
+targets:
+  tilex:
+    main: src/tilex.cr
+
+dependencies:
+  uing:
+    github: kojix2/uing
+
+crystal: '>= 1.19.1'
+
+license: MIT

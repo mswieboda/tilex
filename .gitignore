@@ -1,0 +1,20 @@
+/docs/
+/lib/
+/bin/
+/build/
+/.shards/
+*.dwarf
+
+# macOS specific ignores
+.DS_Store
+
+# windows specific ignores (crystal version manager)
+/.vfox/
+*.vfox*
+
+# Gemini CLI AI agent specfic project settings, context, skills, extensions
+.gemini/
+/GEMINI.md
+
+# bv (beads viewer) local config and caches
+.bv/
