@@ -19,7 +19,7 @@ module Tilex
     @image : UIng::Image?
     @image_width : Float64 = 0
     @image_height : Float64 = 0
-    @area  : UIng::Area?
+    @area : UIng::Area?
 
     {% if flag?(:darwin) && flag?(:standalone) %}
       def force_activate_macos
@@ -159,6 +159,7 @@ module Tilex
       {% elsif flag?(:darwin) && flag?(:standalone) %}
         exit(status)
       {% else %}
+        @window.try(&.destroy)
         UIng.uninit
         exit(status)
       {% end %}
