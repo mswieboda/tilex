@@ -7,6 +7,8 @@ module Tilex
         title: "tilex",
         width: 1280,
         height: 768,
+        resizable: true,
+        high_pixel_density: true,
       )
     end
 
