@@ -90,6 +90,30 @@ module GSDL
       @dirty || (@parent && @parent.not_nil!.dirty?) || false
     end
 
+    def width_fixed? : Bool
+      # It's fixed if it's a specific number OR if it's the RootCanvas
+      return true if @width > 0 || self.is_a?(RootCanvas)
+
+      # If I am a fill parent, I am only fixed if my parent is fixed
+      if @width == FillParent && (p = @parent)
+        return p.width_fixed?
+      end
+
+      false
+    end
+
+    def height_fixed? : Bool
+      # It's fixed if it's a specific number OR if it's the RootCanvas
+      return true if @height > 0 || self.is_a?(RootCanvas)
+
+      # If I am a fill parent, I am only fixed if my parent is fixed
+      if @height == FillParent && (p = @parent)
+        return p.height_fixed?
+      end
+
+      false
+    end
+
     # Logic to calculate the "Actual" draw position based on parent/anchors
     # cached, recalculated when dirty from other variable changes
     def global_position : {Int32, Int32}
@@ -102,7 +126,7 @@ module GSDL
       @global_position_cache
     end
 
-    def calculate_global_position
+    def calculate_global_position : {Int32, Int32}
       # 1. Start with the local relative offset
       base_x = self.x
       base_y = self.y
@@ -126,11 +150,11 @@ module GSDL
       {px + p.content_x + anchor_offset_x + base_x, py + p.content_y + anchor_offset_y + base_y}
     end
 
-    def global_x
+    def global_x : Int32
       global_position[0]
     end
 
-    def global_y
+    def global_y : Int32
       global_position[1]
     end
 
@@ -154,47 +178,47 @@ module GSDL
 
     # The 'Visible' dimension: The box that gets a background color.
     # Logic: Internal width + padding on both sides.
-    def inner_width
+    def inner_width : Int32
       width + @padding.horizontal
     end
 
     # The 'Visible' dimension: The box that gets a background color.
     # Logic: Internal width + padding on both sides.
-    def inner_height
+    def inner_height : Int32
       height + @padding.vertical
     end
 
-    def content_x
+    def content_x : Int32
       inner_x + @padding.left
     end
 
-    def content_y
+    def content_y : Int32
       inner_x + @padding.top
     end
 
-    def content_width
+    def content_width : Int32
       width
     end
 
-    def content_height
+    def content_height : Int32
       height
     end
 
-    def footprint_x
+    def footprint_x : Int32
       global_x
     end
 
-    def footprint_y
+    def footprint_y : Int32
       global_y
     end
 
     # The total horizontal space taken up in the parent
-    def footprint_width
+    def footprint_width : Int32
       inner_width + @margin.horizontal
     end
 
     # The total horizontal space taken up in the parent
-    def footprint_height
+    def footprint_height : Int32
       inner_height + @margin.vertical
     end
 

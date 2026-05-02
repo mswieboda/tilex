@@ -9,7 +9,7 @@ module GSDL
       @anchor = Anchor::BottomCenter,
       @background_color = Color::DarkerGray,
     )
-      super(spacing: spacing, width: width, height: height)
+      super(width: width, height: height, spacing: spacing)
     end
   end
 end

@@ -56,47 +56,43 @@ module GSDL
     end
 
     def width : Int32
-      w = @width
-
-      if w == FillParent
-        # fill parent
+      case @width
+      when FillParent
         if p = @parent
-          # Fill is the parent's AVAILABLE content space minus MY margins
-          # p.width is already the "Content" area of the parent.
-          return p.width - @margin.horizontal - @padding.horizontal
-        else
-          # continue with fit content as backup
-          w = FitContent
+          # Only fill if the parent has a concrete size to fill.
+          # If the parent is also dynamic (-1 or -2), we must return 0
+          # or a base size to break the recursion.
+          return p.width_fixed? ? (p.width - @margin.horizontal - @padding.horizontal) : 0
         end
-      end
 
-      if w == FitContent
+        0
+      when FitContent
         return 0 if @children.empty?
-        return @children.max_of { |c| c.x + c.footprint_width }
-      end
 
-      @width
+        @children.max_of { |c| (c.x + c.footprint_width).as(Int32) }
+      else
+        @width
+      end
     end
 
     def height : Int32
-      h = @height
-
-      if h <= FillParent
-        # fill parent
+      case @height
+      when FillParent
         if p = @parent
-          return p.height - @margin.vertical - @padding.vertical
-        else
-          # continue with fit content as backup
-          h = FitContent
+          # Only fill if the parent has a concrete size to fill.
+          # If the parent is also dynamic (-1 or -2), we must return 0
+          # or a base size to break the recursion.
+          return p.height_fixed? ? (p.height - @margin.vertical - @padding.vertical) : 0
         end
-      end
 
-      if h == FitContent
+        0
+      when FitContent
         return 0 if @children.empty?
-        return @children.max_of { |c| c.y + c.footprint_height }
-      end
 
-      @height
+        @children.max_of { |c| (c.y + c.footprint_height).as(Int32) }
+      else
+        @height
+      end
     end
   end
 end

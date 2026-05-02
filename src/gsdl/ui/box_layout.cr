@@ -6,11 +6,11 @@ module GSDL
 
     def initialize
       @spacing = 0
-      @width = FitContent
-      @height = FitContent
+      @width = FillContent
+      @height = FillContent
     end
 
-    def initialize(@spacing = 0, @width = FitContent, @height = FitContent)
+    def initialize(@width = FillContent, @height = FitContent, @spacing = 0)
     end
 
     def draw(draw : Draw)
