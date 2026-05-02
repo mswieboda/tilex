@@ -9,6 +9,8 @@ module Tilex
         height: 768,
         resizable: true,
         high_pixel_density: true,
+        # TODO: use metal or vulkan if supported else, opengl, else nil
+        renderer_type: :metal,
       )
     end
 

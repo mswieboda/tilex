@@ -1,7 +1,7 @@
-require "./ui_element"
+require "./container"
 
 module GSDL
-  class StatusBar < UIElement
+  class StatusBar < Container
     def initialize(
       parent_width : Int32,
       @height : Int32 = -1,
@@ -16,10 +16,10 @@ module GSDL
       if color = @background_color
         draw.rect_fill(
           rect: FRect.new(
-            x: inner_x, # - self.padding.left,
-            y: inner_y, # - self.padding.top,
-            w: inner_width, # + padding.right,
-            h: inner_height, # + padding.bottom
+            x: inner_x,
+            y: inner_y,
+            w: inner_width,
+            h: inner_height,
           ),
           color: color,
           z_index: z_index
@@ -27,6 +27,10 @@ module GSDL
       end
 
       children.each(&.draw(draw))
+    end
+
+    def parent_width=(parent_width : Int32)
+      @width = parent_width
     end
   end
 end

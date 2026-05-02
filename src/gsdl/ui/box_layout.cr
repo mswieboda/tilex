@@ -1,7 +1,7 @@
-require "./ui_element"
+require "./container"
 
 module GSDL
-  abstract class BoxLayout < UIElement
+  abstract class BoxLayout < Container
     property spacing : Int32 = 0
 
     getter? layout_dirty : Bool = true
