@@ -59,7 +59,8 @@ module Tilex
       @window.try(&.show)
 
       UIng.main
-      UIng.uninit
+
+      quit
     end
 
     def create_menu_bar
@@ -75,11 +76,7 @@ module Tilex
       end
 
       file_menu.append_item("Quit").on_clicked do
-        UIng.quit
-        # Keep your standalone exit hack for the debug builds
-        {% if flag?(:darwin) && flag?(:standalone) %}
-          exit(0)
-        {% end %}
+        quit
       end
     end
 
@@ -88,14 +85,7 @@ module Tilex
 
       window.set_position(Width // 2, Height // 2)
       window.on_closing do
-        puts "Closing window..."
-        UIng.quit
-
-        # On macOS, if we are in .regular policy mode,
-        # we sometimes need to nudge the process to finish.
-        {% if flag?(:darwin) && flag?(:standalone) %}
-          exit(0)
-        {% end %}
+        quit
 
         true
       end
@@ -171,6 +161,19 @@ module Tilex
       vbox.append(@area.not_nil!, stretchy: true)
 
       @window.try(&.set_child(vbox))
+    end
+
+    def quit(status : Int32 = 0)
+      UIng.quit
+
+      {% if flag?(:windows) %}
+        LibC._exit(status)
+      {% elsif flag?(:darwin) && flag?(:standalone) %}
+        exit(status)
+      {% else %}
+        UIng.uninit
+        exit(status)
+      {% end %}
     end
   end
 end
