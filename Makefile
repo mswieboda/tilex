@@ -1,83 +1,100 @@
-ifeq ($(OS),Windows_NT)
-	# 1. SDK Detection (as we set up before)
-	SDK_ROOT = C:/Program Files (x86)/Windows Kits/10/bin
-	LATEST_SDK_VER := $(shell ls "$(SDK_ROOT)" | grep '^10\.' | sort -V | tail -n 1)
-	WIN_SDK_BIN = $(SDK_ROOT)/$(LATEST_SDK_VER)/x64
-
-	# 2. Path to the LibUI static library
-	LIBUI_PATH = $(CURDIR)/lib/uing/libui/release
-
-	# 3. Environment Injections
-	export Path := $(WIN_SDK_BIN);$(Path)
-	export LIBRARY_PATH := $(LIBUI_PATH);$(Path)
-
-	# 4. Linker Flags (Explicitly include ui.lib)
-	# We include standard Windows GUI libs to prevent unresolved symbol errors
-	LINK_FLAGS = --link-flags="ui.lib user32.lib gdi32.lib comctl32.lib kernel32.lib shell32.lib"
-
-	CRYSTAL_COMPILER = vfox exec crystal@1.19.1 -- crystal.exe
-else
-	CRYSTAL_COMPILER = crystal
-endif
-
-# CRYSTAL_COMPILER := crystal
-NAME := tilex
+CRYSTAL_COMPILER := crystal
 SOURCE_DIR := src
+SOURCE_FILE := tilex
 BUILD_DIR := build
 BIN_DIR := bin
 LIB_DIR := lib
+SDL3_MIXER_LIB_DIR := /usr/local/lib
+LINKFLAGS := -L$(SDL3_MIXER_LIB_DIR) -Wl,-rpath,$(SDL3_MIXER_LIB_DIR)
 RM_CMD := rm -rf
+MKDIR_CMD := mkdir -p
+PACKER_FILE := build/assets.pack
+PACKER_BIN := bin/gsdl-packer
+APP_NAME := "tilex"
+GAME_NAME := tilex
+GAME_SRC := src/tilex.cr
 
-ifeq ($(OS),Windows_NT)
-	MKDIR_CMD := mkdir
-else
-	MKDIR_CMD := mkdir -p
-endif
+FLAGS ?=
 
-# File targets
-DEBUG_BIN := $(BUILD_DIR)/$(NAME)_debug
-RELEASE_BIN := $(BUILD_DIR)/$(NAME)
+DEBUG_BIN := $(BUILD_DIR)/$(SOURCE_FILE)_debug
+RELEASE_BIN := $(BUILD_DIR)/$(SOURCE_FILE)
 SOURCES := $(shell find $(SOURCE_DIR) -name "*.cr")
 
 # Phony targets don't represent files
-.PHONY: default red clean build-debug run-debug debug run build-release run-release release
+.PHONY: default build run packer pack build-release run-release clean re release-package release-package-mac release-package-win release-package-linux
 
 # The default target, executed when you just run `make`
-default: run-debug
+default: run
 
 re:
-	@make -B run
+	@$(MAKE) -B run
 
-clean:
-	@echo "Removing build direcory...A"
-	$(RM_CMD) $(BUILD_DIR)
-
-$(BUILD_DIR):
-	@echo "Creating build directory..."
+$(DEBUG_BIN): $(SOURCES)
+	@echo "Building $@..."
 	$(MKDIR_CMD) $(BUILD_DIR)
+	$(CRYSTAL_COMPILER) build $(SOURCE_DIR)/$(SOURCE_FILE).cr -o $@ --link-flags "$(LINKFLAGS)" -p $(FLAGS)
+	@echo
 
-$(DEBUG_BIN): $(BUILD_DIR) src/$(NAME).cr $(SOURCES)
-	@echo "Building $(NAME) (debug)..."
-	$(CRYSTAL_COMPILER) build src/$(NAME).cr -o $(DEBUG_BIN) -Dstandalone -p
+build: $(DEBUG_BIN)
 
-build-debug: $(DEBUG_BIN)
-
-run-debug: $(DEBUG_BIN)
-	@echo "Running $(NAME) (debug)..."
+run: $(DEBUG_BIN)
+	@echo "Running..."
 	./$(DEBUG_BIN)
+	@echo
 
-debug: run-debug
-
-run: run-debug
-
-$(RELEASE_BIN): $(BUILD_DIR) src/$(NAME).cr $(SOURCES)
-	@echo "Building $(NAME) (release)..."
-	$(CRYSTAL_COMPILER) build src/$(NAME).cr -o $(RELEASE_BIN) --no-debug --release -p
+$(RELEASE_BIN): $(SOURCES) $(PACKER_FILE)
+	@echo "Building release $@..."
+	$(MKDIR_CMD) $(BUILD_DIR)
+	$(CRYSTAL_COMPILER) build $(SOURCE_DIR)/$(SOURCE_FILE).cr -o $@ --release --link-flags "$(LINKFLAGS)" --no-debug -p $(FLAGS)
+	@echo
 
 build-release: $(RELEASE_BIN)
 
 run-release: $(RELEASE_BIN)
-	@echo "Running $(NAME) (release)..."
+	@echo "Running release..."
 	./$(RELEASE_BIN)
+	@echo
 
-release: run-release
+$(PACKER_BIN):
+	@echo "Building packer tool..."
+	$(MKDIR_CMD) $(BIN_DIR)
+	$(CRYSTAL_COMPILER) build lib/game_sdl/src/packer.cr -o $(BIN_DIR)/gsdl-packer --release --no-debug -p $(FLAGS)
+	@echo
+
+packer: $(PACKER_BIN)
+
+$(PACKER_FILE): $(PACKER_BIN)
+	@echo "Packing assets via GameSDL packer..."
+	./$(PACKER_BIN)
+	@echo
+
+pack: $(PACKER_FILE)
+
+clean:
+	@echo "Executing clean..."
+	$(RM_CMD) $(BIN_DIR)
+	$(RM_CMD) $(BUILD_DIR)
+	@echo
+
+release-package:
+	@echo "Creating release package for $(GAME_NAME) (target: $(TARGET))..."
+	mkdir -p build
+	crystal run lib/game_sdl/src/gsdl/release_helper.cr -- \
+		$(if $(GAME_NAME),--game=$(GAME_NAME)) \
+		--src=$(if $(SRC),$(SRC),$(GAME_SRC)) \
+		--target=$(TARGET) \
+		--name=$(if $(APP_NAME),$(APP_NAME),$(GAME_NAME)) \
+		$(if $(VERSION),--version=$(VERSION)) \
+		$(if $(ICON),--icon=$(ICON)) \
+		$(if $(BUNDLE_ID),--bundle-id=$(BUNDLE_ID)) \
+		$(if $(OUTPUT),--output=$(OUTPUT))
+
+release-package-mac:
+	@$(MAKE) release-package TARGET=mac
+
+release-package-win:
+	@$(MAKE) release-package TARGET=win
+
+release-package-linux:
+	@$(MAKE) release-package TARGET=linux
+

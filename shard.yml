@@ -9,11 +9,10 @@ targets:
     main: src/tilex.cr
 
 dependencies:
-  uing:
-    github: kojix2/uing
-  stumpy_png:
-    github: stumpycr/stumpy_png
-    version: "~> 5.0.1"
+  game_sdl:
+    github: mswieboda/game_sdl
+    version: "~> 0.106.1"
+    # path: ../game_sdl
 
 crystal: '>= 1.19.1'
 

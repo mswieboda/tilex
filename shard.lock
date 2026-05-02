@@ -1,14 +1,10 @@
 version: 2.0
 shards:
-  stumpy_core:
-    git: https://github.com/stumpycr/stumpy_core.git
-    version: 1.9.1
+  game_sdl:
+    git: https://github.com/mswieboda/game_sdl.git
+    version: 0.106.1
 
-  stumpy_png:
-    git: https://github.com/stumpycr/stumpy_png.git
-    version: 5.0.1
-
-  uing:
-    git: https://github.com/kojix2/uing.git
-    version: 0.0.8
+  sdl3:
+    git: https://github.com/mswieboda/sdl3.cr.git
+    version: 0.50.2
 

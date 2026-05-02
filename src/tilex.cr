@@ -1,5 +1,6 @@
-require "uing"
-require "stumpy_png"
-require "./tilex/**" # This glob-loads everything in the folder
+require "game_sdl"
+require "./tilex/**"
 
-Tilex::App.new.run
+module Tilex
+  App.new.run
+end
