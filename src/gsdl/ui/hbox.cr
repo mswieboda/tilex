@@ -11,7 +11,7 @@ module GSDL
         current_x += child.inner_width + child.margin.horizontal + @spacing
       end
 
-      @layout_dirty = false
+      @dirty = false
     end
   end
 end

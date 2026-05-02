@@ -42,33 +42,61 @@ module GSDL
     end
 
     def draw(draw : Draw)
-      # Containers usually draw their own background, then children
+      draw_background(draw)
       @children.each(&.draw(draw))
     end
 
     protected def dirty!
-      return if @position_dirty
+      return if @dirty
 
-      @position_dirty = true
+      @dirty = true
 
       # Notify children that their global positions are now invalid
       @children.each(&.dirty!)
     end
 
     def width : Int32
-      return @width - @padding.horizontal if @width != -1
-      return 0 if @children.empty?
+      w = @width
 
-      # Find the furthest right edge among children
-      @children.max_of { |c| c.x + c.width } - @padding.horizontal
+      if w == FillParent
+        # fill parent
+        if p = @parent
+          # Fill is the parent's AVAILABLE content space minus MY margins
+          # p.width is already the "Content" area of the parent.
+          return p.width - @margin.horizontal - @padding.horizontal
+        else
+          # continue with fit content as backup
+          w = FitContent
+        end
+      end
+
+      if w == FitContent
+        return 0 if @children.empty?
+        return @children.max_of { |c| c.x + c.footprint_width }
+      end
+
+      @width
     end
 
     def height : Int32
-      return @height - @padding.vertical if @height != -1
-      return 0 if @children.empty?
+      h = @height
 
-      # Find the furthest bottom edge among children
-      @children.max_of { |c| c.y + c.height } - @padding.vertical
+      if h <= FillParent
+        # fill parent
+        if p = @parent
+          return p.height - @margin.vertical - @padding.vertical
+        else
+          # continue with fit content as backup
+          h = FitContent
+        end
+      end
+
+      if h == FitContent
+        return 0 if @children.empty?
+        return @children.max_of { |c| c.y + c.footprint_height }
+      end
+
+      @height
     end
   end
 end

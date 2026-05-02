@@ -1,18 +1,21 @@
 module GSDL
+  FillParent = -2
+  FitContent = -1
+
   abstract class UIElement
     # Basic Transform
     getter x : Int32 = 0
     getter y : Int32 = 0
 
-    @width : Int32 = -1
-    @height : Int32 = -1
+    getter width : Int32 = FitContent
+    getter height : Int32 = FitContent
 
     # The Box Model
     property margin : UISpacing = UISpacing.new(all: 0)
     property padding : UISpacing = UISpacing.new(all: 0)
 
     # TODO: implement border
-    # property border_width : Int32 = 0
+    # property border : UISpacing = UISpacing.new(all: 0)
 
     # Aesthetics
     property background_color : Color?
@@ -26,10 +29,26 @@ module GSDL
     property? visible : Bool = true
     property parent : UIElement?
 
-    @position_dirty : Bool = true
+    @dirty : Bool = true
     @global_position_cache : {Int32, Int32} = {0, 0}
 
-    abstract def draw(draw : Draw)
+    def draw(draw : Draw)
+      draw_background(draw)
+    end
+
+    def draw_background(draw : Draw)
+      if (color = @background_color) && !color.transparent?
+        draw.rect_fill(
+          rect: FRect.new(
+            x: inner_x,
+            y: inner_y,
+            w: inner_width,
+            h: inner_height,
+          ),
+          color: color,
+        )
+      end
+    end
 
     def x=(x : Int32)
       return if @x == x
@@ -41,14 +60,6 @@ module GSDL
       return if @y == y
       @y = y
       dirty!
-    end
-
-    def width
-      @width - @padding.horizontal
-    end
-
-    def height
-      @height - @padding.vertical
     end
 
     def width=(width : Int32)
@@ -70,23 +81,22 @@ module GSDL
     end
 
     protected def dirty!
-      return if @position_dirty
+      return if @dirty
 
-      @position_dirty = true
+      @dirty = true
     end
 
-    protected def position_dirty? : Bool
-      @position_dirty || (@parent && @parent.not_nil!.position_dirty?) || false
+    protected def dirty? : Bool
+      @dirty || (@parent && @parent.not_nil!.dirty?) || false
     end
 
     # Logic to calculate the "Actual" draw position based on parent/anchors
-    # TODO: might eventually want to "dirty-flag" and cache this value
-    # if parent usages get heavy and deeply nested
+    # cached, recalculated when dirty from other variable changes
     def global_position : {Int32, Int32}
       # If we or our parent are dirty, we must recalculate
-      if @position_dirty || (@parent && @parent.not_nil!.position_dirty?)
+      if dirty?
         @global_position_cache = calculate_global_position
-        @position_dirty = false
+        @dirty = false
       end
 
       @global_position_cache
@@ -94,8 +104,8 @@ module GSDL
 
     def calculate_global_position
       # 1. Start with the local relative offset
-      base_x = self.x + @margin.left
-      base_y = self.y + @margin.top
+      base_x = self.x
+      base_y = self.y
 
       # 2. If there's no parent, we are at the root (window level)
       if (p = @parent).nil?
@@ -104,21 +114,16 @@ module GSDL
 
       # 3. Get the parent's global position first (recursion)
       px, py = p.global_position
-      pw, ph = p.width, p.height
-
-      # Add parent's padding to the starting point
-      px += p.padding.left
-      py += p.padding.top
 
       # Note: parent width/height used for anchors should be "inner" size
-      inner_pw = pw - p.padding.left - p.padding.right
-      inner_ph = ph - p.padding.top - p.padding.bottom
+      inner_pw = p.width # - p.padding.horizontal
+      inner_ph = p.height # - p.padding.vertical
 
       # 4. Calculate the anchor point relative to the parent's dimensions
       anchor_offset_x, anchor_offset_y = calculate_anchor_offset(inner_pw, inner_ph)
 
-      # 5. Result is Parent_Pos + Anchor_Point + Local_Offset
-      {px + anchor_offset_x + base_x, py + anchor_offset_y + base_y}
+      # 5. Result = Parent Content Start + Anchor + Local x
+      {px + p.content_x + anchor_offset_x + base_x, py + p.content_y + anchor_offset_y + base_y}
     end
 
     def global_x
@@ -138,13 +143,13 @@ module GSDL
     # The 'Inner' coordinate: Start of the Padding/Background.
     # Logic: Global Position + Margin.
     def inner_x : Int32
-      global_x + @margin.left
+      inner_position[0]
     end
 
     # The 'Inner' coordinate: Start of the Padding/Background.
     # Logic: Global Position + Margin.
     def inner_y : Int32
-      global_y + @margin.top
+      inner_position[1]
     end
 
     # The 'Visible' dimension: The box that gets a background color.
@@ -159,18 +164,55 @@ module GSDL
       height + @padding.vertical
     end
 
+    def content_x
+      inner_x + @padding.left
+    end
+
+    def content_y
+      inner_x + @padding.top
+    end
+
+    def content_width
+      width
+    end
+
+    def content_height
+      height
+    end
+
+    def footprint_x
+      global_x
+    end
+
+    def footprint_y
+      global_y
+    end
+
+    # The total horizontal space taken up in the parent
+    def footprint_width
+      inner_width + @margin.horizontal
+    end
+
+    # The total horizontal space taken up in the parent
+    def footprint_height
+      inner_height + @margin.vertical
+    end
+
     private def calculate_anchor_offset(parent_width : Int32, parent_height : Int32) : {Int32, Int32}
-      # The full width/height including the padding box and the margins
-      full_width = self.inner_width + @margin.horizontal
-      full_height = self.inner_height + @margin.vertical
+      # The "Footprint" is the total space this element occupies in its parent.
+      # Using the 'inner' dimensions (Padding+Content) + the Margins.
+      footprint_width = self.inner_width + @margin.horizontal
+      footprint_height = self.inner_height + @margin.vertical
 
       x_offset = case @anchor
       when .top_left?, .center_left?, .bottom_left?
         0
       when .top_center?, .center?, .bottom_center?
-        (parent_width - full_width) // 2
+        # Centers the entire footprint within the parent width
+        (parent_width - footprint_width) // 2
       when .top_right?, .center_right?, .bottom_right?
-        parent_width - full_width
+        # Snaps the right edge of the margin to the parent's right edge
+        parent_width - footprint_width
       else
         0
       end
@@ -179,9 +221,9 @@ module GSDL
       when .top_left?, .top_center?, .top_right?
         0
       when .center_left?, .center?, .center_right?
-        (parent_height - full_height) // 2
+        (parent_height - footprint_height) // 2
       when .bottom_left?, .bottom_center?, .bottom_right?
-        parent_height - full_height
+        parent_height - footprint_height
       else
         0
       end

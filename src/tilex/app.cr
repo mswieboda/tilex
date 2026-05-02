@@ -5,8 +5,8 @@ module Tilex
     def initialize
       super(
         title: "tilex",
-        width: 1280,
-        height: 768,
+        width: 800,
+        height: 600,
         resizable: true,
         high_pixel_density: true,
         # TODO: use metal or vulkan if supported else, opengl, else nil

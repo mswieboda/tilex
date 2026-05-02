@@ -232,10 +232,6 @@ module GSDL
     end
 
     def draw(draw : Draw)
-      perform_draw(draw)
-    end
-
-    private def perform_draw(draw : Draw)
       return unless tex = @texture
 
       dest_rect = FRect.new(

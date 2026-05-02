@@ -11,7 +11,7 @@ module GSDL
         current_y += child.inner_height + child.margin.vertical + @spacing
       end
 
-      @layout_dirty = false
+      @dirty = false
     end
   end
 end
