@@ -11,6 +11,9 @@ targets:
 dependencies:
   uing:
     github: kojix2/uing
+  stumpy_png:
+    github: stumpycr/stumpy_png
+    version: "~> 5.0.1"
 
 crystal: '>= 1.19.1'
 
