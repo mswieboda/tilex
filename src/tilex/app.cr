@@ -15,6 +15,7 @@ module Tilex
   Height = 600
 
   class App
+    @window : UIng::Window?
     @image : UIng::Image?
     @image_width : Float64 = 0
     @image_height : Float64 = 0
@@ -51,11 +52,11 @@ module Tilex
 
       create_menu_bar
 
-      setup_window
+      create_window
 
       create_ui
 
-      Window.show
+      @window.try(&.show)
 
       UIng.main
       UIng.uninit
@@ -64,7 +65,7 @@ module Tilex
     def create_menu_bar
       file_menu = UIng::Menu.new("File")
       file_menu.append_item("Open").on_clicked do |w|
-        if path = Window.open_file
+        if path = @window.try(&.open_file)
           load_image(path)
 
           # Tell the area to repaint now that we have a new image
@@ -80,6 +81,26 @@ module Tilex
           exit(0)
         {% end %}
       end
+    end
+
+    def create_window
+      window = UIng::Window.new("tilex", Width, Height, menubar: true, margined: true)
+
+      window.set_position(Width // 2, Height // 2)
+      window.on_closing do
+        puts "Closing window..."
+        UIng.quit
+
+        # On macOS, if we are in .regular policy mode,
+        # we sometimes need to nudge the process to finish.
+        {% if flag?(:darwin) && flag?(:standalone) %}
+          exit(0)
+        {% end %}
+
+        true
+      end
+
+      @window = window
     end
 
     def load_image(path)
@@ -128,22 +149,6 @@ module Tilex
       @image = image
     end
 
-    def setup_window
-      Window.set_position(Width // 2, Height // 2)
-      Window.on_closing do
-        puts "Closing window..."
-        UIng.quit
-
-        # On macOS, if we are in .regular policy mode,
-        # we sometimes need to nudge the process to finish.
-        {% if flag?(:darwin) && flag?(:standalone) %}
-          exit(0)
-        {% end %}
-
-        true
-      end
-    end
-
     def create_ui
       vbox = UIng::Box.new(:vertical, padded: true)
 
@@ -165,9 +170,7 @@ module Tilex
       @area = UIng::Area.new(handler)
       vbox.append(@area.not_nil!, stretchy: true)
 
-      Window.set_child(vbox)
+      @window.try(&.set_child(vbox))
     end
   end
-
-  Window = UIng::Window.new("Hello World", Width, Height, menubar: true, margined: true)
 end
