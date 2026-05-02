@@ -38,8 +38,6 @@ module Tilex
         # 4. Activate the app, ignoring other apps
         activate_sel = LibObjC.get_sel("activateIgnoringOtherApps:")
         LibObjC.msg_send(ns_app, activate_sel, true)
-
-        puts "macOS focus forced for tilex."
       end
     {% end %}
 
@@ -70,7 +68,6 @@ module Tilex
           load_image(path)
 
           # Tell the area to repaint now that we have a new image
-          puts ">>> @area.try(&.queue_redraw_all)"
           @area.try(&.queue_redraw_all)
         end
       end
@@ -94,7 +91,6 @@ module Tilex
     end
 
     def load_image(path)
-      puts ">>> Loading image: #{path}"
       canvas = StumpyPNG.read(path)
       @image_width = canvas.width.to_f
       @image_height = canvas.height.to_f
@@ -122,12 +118,6 @@ module Tilex
           buffer[i + 2] = b.to_u8
           buffer[i + 3] = a.to_u8
 
-          # Log just a few pixels to avoid flooding the terminal
-          if (x == 0 && y == 0) || (x == canvas.width // 2 && y == canvas.height // 2)
-            puts "Pixel at #{x},#{y} - Stumpy(16bit): R:#{r} G:#{g} B:#{b} A:#{a}"
-            puts "Pixel at #{x},#{y} - Buffer(8bit):  R:#{buffer[i]} G:#{buffer[i + 1]} B:#{buffer[i + 2]} A: #{buffer[i + 3]}"
-          end
-
           i += 4
         end
       end
@@ -146,10 +136,8 @@ module Tilex
       handler = UIng::Area::Handler.new
 
       handler.draw do |area, params|
-        puts ">>> handler draw area: #{params.area_width}x#{params.area_height}"
         # Only draw if we actually have an image loaded
         if img = @image
-          puts ">>> handler draw image"
           # Draw the full image at coordinates (0, 0)
           w = @image_width.to_f
           h = @image_height.to_f
