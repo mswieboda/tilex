@@ -26,7 +26,7 @@ module GSDL
 
     # The Root is the end of the line, it returns its own x,y (0,0)
     def global_position : {Int32, Int32}
-      @dirty = false # Clear the flag so the ripple stops
+      @dirty_position = false # Clear the flag so the ripple stops
       {@x, @y}
     end
 

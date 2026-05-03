@@ -20,7 +20,7 @@ module GSDL
 
       @children << child
 
-      dirty!
+      dirty_position!
 
       child
     end
@@ -38,7 +38,7 @@ module GSDL
       @children.each { |c| c.parent = nil }
       @children.clear
 
-      dirty!
+      dirty_position!
     end
 
     def draw(draw : Draw)
@@ -46,13 +46,13 @@ module GSDL
       @children.each(&.draw(draw))
     end
 
-    protected def dirty!
-      return if @dirty
+    protected def dirty_position!
+      return if @dirty_position
 
-      @dirty = true
+      @dirty_position = true
 
       # Notify children that their global positions are now invalid
-      @children.each(&.dirty!)
+      @children.each(&.dirty_position!)
     end
 
     def width : Int32

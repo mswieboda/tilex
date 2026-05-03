@@ -29,7 +29,7 @@ module GSDL
     property? visible : Bool = true
     property parent : UIElement?
 
-    @dirty : Bool = true
+    @dirty_position : Bool = true
     @global_position_cache : {Int32, Int32} = {0, 0}
 
     def draw(draw : Draw)
@@ -53,41 +53,39 @@ module GSDL
     def x=(x : Int32)
       return if @x == x
       @x = x
-      dirty!
+      dirty_position!
     end
 
     def y=(y : Int32)
       return if @y == y
       @y = y
-      dirty!
+      dirty_position!
     end
 
     def width=(width : Int32)
       return if @width == width
       @width = width
-      dirty!
+      dirty_position!
     end
 
     def height=(height : Int32)
       return if @height == height
       @height = height
-      dirty!
+      dirty_position!
     end
 
     def anchor=(anchor : Anchor)
       return if @anchor == anchor
       @anchor = anchor
-      dirty!
+      dirty_position!
     end
 
-    protected def dirty!
-      return if @dirty
-
-      @dirty = true
+    protected def dirty_position!
+      @dirty_position = true
     end
 
-    protected def dirty? : Bool
-      @dirty || (@parent && @parent.not_nil!.dirty?) || false
+    protected def dirty_position? : Bool
+      @dirty_position || (@parent && @parent.not_nil!.dirty_position?) || false
     end
 
     def width_fixed? : Bool
@@ -115,12 +113,12 @@ module GSDL
     end
 
     # Logic to calculate the "Actual" draw position based on parent/anchors
-    # cached, recalculated when dirty from other variable changes
+    # cached, recalculated when dirty_position? from other variable changes
     def global_position : {Int32, Int32}
-      # If we or our parent are dirty, we must recalculate
-      if dirty?
+      # If we or our parent have a dirty_position?, we must recalculate
+      if dirty_position?
         @global_position_cache = calculate_global_position
-        @dirty = false
+        @dirty_position = false
       end
 
       @global_position_cache
