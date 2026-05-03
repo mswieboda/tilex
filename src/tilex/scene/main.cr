@@ -11,10 +11,11 @@ module Tilex
       @handler = Scene::EventHandler.new(@canvas)
       App.instance.register_event_handler(@handler)
 
-      vbox = @canvas.add_child(GSDL::VBox.new(width: GSDL::FillParent, height: GSDL::FillParent))
+      vbox = @canvas.add_child(GSDL::VBox.new)
 
       # vbox canvas box test
-      box = vbox.add_child(GSDL::Canvas.new(width: GSDL::FillParent, height: GSDL::FillParent))
+      box = vbox.add_child(GSDL::Canvas.new)
+      box.flex = 1_u8
       box.background_color = GSDL::Color::Magenta
       box.padding = GSDL::UISpacing.new(all: 32)
       box.margin = GSDL::UISpacing.new(all: 16)
@@ -23,37 +24,17 @@ module Tilex
       box_inner.background_color = GSDL::Color::LimeGreen
 
       # vbox -> status bar
-      status_bar = @canvas.add_child(GSDL::StatusBar.new(spacing: 32))
+      status_bar = vbox.add_child(GSDL::StatusBar.new(spacing: 32, anchor: GSDL::Anchor::BottomLeft))
+      status_bar.flex = 0_u8
       status_bar.margin = GSDL::UISpacing.new(horizontal: 16, vertical: 8)
-      status_bar.padding = GSDL::UISpacing.new(horizontal: 64, vertical: 32)
+      status_bar.padding = GSDL::UISpacing.new(all: 8)
+      status_bar.background_color = GSDL::Color::Red
 
       # status bar -> text
       font = GSDL::Font.default(32_f32)
-      text = status_bar.add_child(GSDL::UIText.new(font, "Pos: 0,0"))
+      status_bar.add_child(GSDL::UIText.new(font, "Pos: 0,0"))
       status_bar.add_child(GSDL::UIText.new(font, "Layer: Background"))
       status_bar.add_child(GSDL::UIText.new(font, "Zoom: 100%"))
-
-      # log_e(@canvas, "@canvas")
-      # log_e(vbox, "vbox")
-      # log_e(box, "box")
-      # log_e(box_inner, "box_inner")
-
-      # TODO: for some reason needs this log to render correctly
-      # log_e(status_bar, "status_bar")
-
-      # log_e(text, "text")
-    end
-
-    def log_e(e : GSDL::UIElement, name : String)
-      puts ">>> #{name}"
-      puts ">>> \tm trbl: #{{e.margin.top, e.margin.right, e.margin.bottom, e.margin.left}}"
-      puts ">>> \tp trbl: #{{e.padding.top, e.padding.right, e.padding.bottom, e.padding.left}}"
-      puts ">>> relative:\t pos: #{{e.x, e.y}}\tsize: #{e.width}x#{e.height}"
-      puts ">>> inner:\t pos: #{{e.inner_x, e.inner_y}}\tsize: #{e.inner_width}x#{e.inner_height}"
-      puts ">>> content:\t pos: #{{e.content_x, e.content_y}}\tsize: #{e.content_width}x#{e.content_height}"
-      puts ">>> footprint:\t pos: #{{e.footprint_x, e.footprint_y}}\tsize: #{e.footprint_width}x#{e.footprint_height}"
-      puts
-      puts
     end
 
     def update(dt : Float32)

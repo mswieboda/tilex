@@ -14,6 +14,10 @@ module GSDL
     property margin : UISpacing = UISpacing.new(all: 0)
     property padding : UISpacing = UISpacing.new(all: 0)
 
+    # The "Shares" this element takes in a BoxLayout
+    # 0 = Fixed/Fit, 1+ = Flex Fill
+    getter flex : UInt8 = 0_u8
+
     # TODO: implement border
     # property border : UISpacing = UISpacing.new(all: 0)
 
@@ -77,7 +81,22 @@ module GSDL
     def anchor=(anchor : Anchor)
       return if @anchor == anchor
       @anchor = anchor
+
+      # When the anchor changes, we re-calculate our local x/y
+      if p = @parent
+        # This sets our internal @x and @y based on the new anchor
+        apply_anchor!(p.width, p.height)
+      end
+
       dirty_position!
+    end
+
+    def flex=(flex : UInt8)
+      return if @flex == flex
+      @flex = flex
+      if p = @parent
+        dirty_layout! if p.is_a?(Container)
+      end
     end
 
     protected def dirty_position!
@@ -112,6 +131,18 @@ module GSDL
       false
     end
 
+    def apply_anchor!(pw : Int32, ph : Int32)
+      # Only apply if we aren't being managed by a BoxLayout (flex > 0)
+      return if flex > 0
+
+      off_x, off_y = calculate_anchor_offset(pw, ph)
+
+      # Update local x/y. These will be added to the parent's content_x/y
+      # in the global_position call.
+      @x = off_x
+      @y = off_y
+    end
+
     # Logic to calculate the "Actual" draw position based on parent/anchors
     # cached, recalculated when dirty_position? from other variable changes
     def global_position : {Int32, Int32}
@@ -124,28 +155,43 @@ module GSDL
       @global_position_cache
     end
 
+    # def calculate_global_position : {Int32, Int32}
+    #   # 1. Start with the local relative offset
+    #   base_x = self.x
+    #   base_y = self.y
+
+    #   # 2. If there's no parent, we are at the root (window level)
+    #   if (p = @parent).nil?
+    #     return {base_x, base_y}
+    #   end
+
+    #   # 3. Get the parent's global position first (recursion)
+    #   px, py = p.global_position
+
+    #   # Note: parent width/height used for anchors should be "inner" size
+    #   inner_pw = p.width # - p.padding.horizontal
+    #   inner_ph = p.height # - p.padding.vertical
+
+    #   # 4. Calculate the anchor point relative to the parent's dimensions
+    #   anchor_offset_x, anchor_offset_y = calculate_anchor_offset(inner_pw, inner_ph)
+
+    #   # 5. Result = Parent Content Start + Anchor + Local x
+    #   {px + p.content_x + anchor_offset_x + base_x, py + p.content_y + anchor_offset_y + base_y}
+    # end
+
     def calculate_global_position : {Int32, Int32}
-      # 1. Start with the local relative offset
+      # 1. Start with the local relative offset (set by layout! or user)
       base_x = self.x
       base_y = self.y
 
-      # 2. If there's no parent, we are at the root (window level)
+      # 2. Root check
       if (p = @parent).nil?
         return {base_x, base_y}
       end
 
-      # 3. Get the parent's global position first (recursion)
-      px, py = p.global_position
-
-      # Note: parent width/height used for anchors should be "inner" size
-      inner_pw = p.width # - p.padding.horizontal
-      inner_ph = p.height # - p.padding.vertical
-
-      # 4. Calculate the anchor point relative to the parent's dimensions
-      anchor_offset_x, anchor_offset_y = calculate_anchor_offset(inner_pw, inner_ph)
-
-      # 5. Result = Parent Content Start + Anchor + Local x
-      {px + p.content_x + anchor_offset_x + base_x, py + p.content_y + anchor_offset_y + base_y}
+      # 3. Result = Parent's Global Content Start + Local x/y
+      # p.content_x/y already include p.global_x/y and p.margin and p.padding
+      {p.content_x + base_x, p.content_y + base_y}
     end
 
     def global_x : Int32
@@ -191,8 +237,13 @@ module GSDL
     end
 
     def content_y : Int32
-      inner_x + @padding.top
+      inner_y + @padding.top
     end
+
+    def layout!
+      # Base implementation does nothing
+    end
+
 
     def content_width : Int32
       width

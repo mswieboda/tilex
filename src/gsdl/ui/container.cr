@@ -4,6 +4,18 @@ module GSDL
   abstract class Container < UIElement
     property children = [] of UIElement
 
+    @dirty_layout = true
+
+    protected def dirty_layout!
+      @dirty_layout = true
+
+      # if the parent's size depends on this container (FIT_CONTENT),
+      # we must also mark the parent as dirty.
+      if p = parent
+        p.dirty_layout! if p.is_a?(Container)
+      end
+    end
+
     def add_child(child : UIElement)
       # 1. Prevent adding the same child twice
       return child if @children.includes?(child)
@@ -29,6 +41,8 @@ module GSDL
       if @children.delete(child)
         child.parent = nil
       end
+
+      dirty_position!
 
       child
     end

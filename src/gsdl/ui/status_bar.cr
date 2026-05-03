@@ -3,11 +3,11 @@ require "./container"
 module GSDL
   class StatusBar < HBox
     def initialize(
-      width : Int32 = FillParent,
-      height : Int32 = FitContent,
-      spacing : Int32 = 0,
-      @anchor = Anchor::BottomCenter,
+      width = FillParent,
+      height = FitContent,
+      spacing = 0,
       @background_color = Color::DarkerGray,
+      @anchor = Anchor::BottomLeft,
     )
       super(width: width, height: height, spacing: spacing)
     end
