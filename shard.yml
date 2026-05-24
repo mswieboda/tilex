@@ -11,7 +11,7 @@ targets:
 dependencies:
   game_sdl:
     github: mswieboda/game_sdl
-    version: "~> 0.117.4"
+    version: "~> 0.117.5"
     # path: ../game_sdl
 
 crystal: '>= 1.19.1'

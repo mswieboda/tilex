@@ -1,6 +1,6 @@
 module Tilex
   class Scene::Main < GSDL::Scene
-    @canvas : GSDL::RootCanvas
+    getter canvas : GSDL::RootCanvas
     @handler : GSDL::EventHandler
 
     def initialize
