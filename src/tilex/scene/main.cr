@@ -33,6 +33,9 @@ module Tilex
       panel_right.width = 33
       panel_right.background_color = GSDL::Color::Purple
 
+      # Add oversized, overflowing text to right panel for visual clipping verification
+      panel_left.add_child(GSDL::UIText.new(text: "Oversized Overflowing Clipping Text Element", font_size: 32))
+
       # vbox -> status bar
       status_bar = vbox.add_child(GSDL::StatusBar.new(spacing: 32, anchor: GSDL::Anchor::BottomLeft))
       status_bar.flex = 0

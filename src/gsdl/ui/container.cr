@@ -62,6 +62,8 @@ module GSDL
       dirty_layout!
     end
 
+    property? clips_children : Bool = true
+
     def layout!
       @dirty_layout = false
     end
@@ -70,7 +72,14 @@ module GSDL
       layout! if @dirty_layout
 
       draw_background(draw)
-      @children.each(&.draw(draw))
+
+      if clips_children?
+        draw.push_clip(GSDL::Rect.new(content_x, content_y, width, height))
+        @children.each(&.draw(draw))
+        draw.pop_clip
+      else
+        @children.each(&.draw(draw))
+      end
     end
 
     protected def dirty_position!
