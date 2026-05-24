@@ -67,14 +67,50 @@ module GSDL
       dirty_position!
     end
 
+    @style_width : Int32?
+    @style_height : Int32?
+
+    def style_width : Int32
+      @style_width ||= @width
+    end
+
+    def style_height : Int32
+      @style_height ||= @height
+    end
+
+    def reset_layout!
+      if style_width == FitContent || style_width == FillParent
+        self.width = style_width
+      end
+      if style_height == FitContent || style_height == FillParent
+        self.height = style_height
+      end
+    end
+
     def width=(width : Int32)
+      return if @width == width
+      @width = width
+      @style_width = width
+      dirty_position!
+      dirty_layout!
+    end
+
+    def height=(height : Int32)
+      return if @height == height
+      @height = height
+      @style_height = height
+      dirty_position!
+      dirty_layout!
+    end
+
+    def set_layout_width(width : Int32)
       return if @width == width
       @width = width
       dirty_position!
       dirty_layout!
     end
 
-    def height=(height : Int32)
+    def set_layout_height(height : Int32)
       return if @height == height
       @height = height
       dirty_position!
@@ -116,10 +152,10 @@ module GSDL
 
     def width_fixed? : Bool
       # It's fixed if it's a specific number OR if it's the RootCanvas
-      return true if @width > 0 || self.is_a?(RootCanvas)
+      return true if style_width > 0 || self.is_a?(RootCanvas)
 
       # If I am a fill parent, I am only fixed if my parent is fixed
-      if @width == FillParent && (p = @parent)
+      if style_width == FillParent && (p = @parent)
         return p.width_fixed?
       end
 
@@ -128,10 +164,10 @@ module GSDL
 
     def height_fixed? : Bool
       # It's fixed if it's a specific number OR if it's the RootCanvas
-      return true if @height > 0 || self.is_a?(RootCanvas)
+      return true if style_height > 0 || self.is_a?(RootCanvas)
 
       # If I am a fill parent, I am only fixed if my parent is fixed
-      if @height == FillParent && (p = @parent)
+      if style_height == FillParent && (p = @parent)
         return p.height_fixed?
       end
 

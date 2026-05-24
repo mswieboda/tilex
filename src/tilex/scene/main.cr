@@ -37,16 +37,24 @@ module Tilex
       panel_left.add_child(GSDL::UIText.new(text: "Oversized Overflowing Clipping Text Element", font_size: 32))
 
       # vbox -> status bar
-      status_bar = vbox.add_child(GSDL::StatusBar.new(spacing: 32, anchor: GSDL::Anchor::BottomLeft))
+      status_bar = vbox.add_child(GSDL::StatusBar.new(spacing: 8))
       status_bar.flex = 0
       status_bar.margin = GSDL::UISpacing.new(horizontal: 16, vertical: 8)
       status_bar.padding = GSDL::UISpacing.new(all: 8)
       status_bar.background_color = GSDL::Color::Red
 
-      # status bar -> text
-      status_bar.add_child(GSDL::UIText.new(text: "Pos: 0,0", font_size: 32))
-      status_bar.add_child(GSDL::UIText.new(text: "Layer: Background", font_size: 32))
-      status_bar.add_child(GSDL::UIText.new(text: "Zoom: 100%", font_size: 32))
+      # status bar -> left|center|right text
+      font_size = 24
+      background_color = GSDL::Color::Navy
+
+      [
+        GSDL::UIText.new(text: "Pos: 0,0", font_size: font_size, v_align: GSDL::VerticalAlign::Center),
+        GSDL::UIText.new(text: "Layer: Background", font_size: font_size, h_align: GSDL::HorizontalAlign::Center, v_align: GSDL::VerticalAlign::Center),
+        GSDL::UIText.new(text: "Zoom: 100%", font_size: font_size, h_align: GSDL::HorizontalAlign::Right, v_align: GSDL::VerticalAlign::Bottom)
+      ].each do |text|
+        text.background_color = background_color
+        status_bar.add_child(text)
+      end
     end
 
     def update(dt : Float32)

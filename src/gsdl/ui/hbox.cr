@@ -5,6 +5,9 @@ module GSDL
     def layout!
       return if @children.empty?
 
+      # PASS 0: Reset dynamic children layout
+      @children.each(&.reset_layout!)
+
       # PASS 1: Measurement
       # Ensure all children measure themselves so their footprints are accurate.
       @children.each(&.layout!)
@@ -19,6 +22,16 @@ module GSDL
         child.x = current_x
         child.y = 0
         current_x += child.footprint_width + @spacing
+      end
+
+      # PASS 4: Cross-axis alignment (Stretch)
+      if stretch?
+        parent_inner_height = self.height
+        @children.each do |child|
+          if !child.height_fixed?
+            child.set_layout_height(parent_inner_height - child.margin.vertical)
+          end
+        end
       end
 
       @dirty_layout = false

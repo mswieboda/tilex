@@ -9,30 +9,33 @@ module GSDL
       @x : Int32 = 0,
       @y : Int32 = 0,
       color = ColorScheme.get(:ui_text),
-      align : HorizontalAlign = HorizontalAlign::Left,
+      h_align : HorizontalAlign = HorizontalAlign::Left,
+      v_align : VerticalAlign = VerticalAlign::Top,
       @anchor : Anchor = Anchor::TopLeft,
-      wrap_width : Int32? = nil,
+      width : Int32? = nil,
+      height : Int32? = nil,
       @z_index : Int32 = 0,
       opacity : UInt8 = 255_u8,
       weight : FontWeight = FontWeight::Normal,
       style : FontStyle = FontStyle::Regular,
     )
+      @width = width || FitContent
+      @height = height || FitContent
       @text_entity = GSDL::Text.new(
         font: font,
         font_size: font_size,
         text: text,
-        h_align: align,
+        h_align: h_align,
+        v_align: v_align,
         color: color,
-        width: wrap_width,
+        width: resolved_width,
+        height: resolved_height,
         z_index: z_index,
         weight: weight,
         style: style,
         draw_relative_to_camera: false
       )
       @text_entity.opacity = opacity
-
-      @width = wrap_width || FitContent
-      @height = FitContent
     end
 
     def text : String
@@ -101,7 +104,7 @@ module GSDL
 
     def font_size=(size : Num)
       return if font_size == size
-      recreate_text_entity(font_size: size)
+      @text_entity.font_size = size
       notify_size_changed
     end
 
@@ -115,21 +118,40 @@ module GSDL
       notify_size_changed
     end
 
-    def wrap_width : Int32?
-      w = @width
-      w > 0 ? w : nil
+    def v_align : VerticalAlign
+      @text_entity.v_align
     end
 
-    def wrap_width=(val : Int32?)
-      @width = val || FitContent
-      @text_entity.width = val
+    def v_align=(align : VerticalAlign)
+      return if @text_entity.v_align == align
+      @text_entity.v_align = align
       notify_size_changed
+    end
+
+    def width=(width : Int32)
+      super
+      @text_entity.width = resolved_width
+    end
+
+    def height=(height : Int32)
+      super
+      @text_entity.height = resolved_height
+    end
+
+    def set_layout_width(width : Int32)
+      super
+      @text_entity.width = resolved_width
+    end
+
+    def set_layout_height(height : Int32)
+      super
+      @text_entity.height = resolved_height
     end
 
     def width : Int32
       w = @width
       if w == FitContent
-        @text_entity.width.to_i
+        @text_entity.width.to_f.ceil.to_i
       elsif w == FillParent
         if p = @parent
           p.width_fixed? ? (p.width - @margin.horizontal - @padding.horizontal) : 0
@@ -144,7 +166,7 @@ module GSDL
     def height : Int32
       h = @height
       if h == FitContent
-        @text_entity.height.to_i
+        @text_entity.height.to_f.ceil.to_i
       elsif h == FillParent
         if p = @parent
           p.height_fixed? ? (p.height - @margin.vertical - @padding.vertical) : 0
@@ -158,6 +180,10 @@ module GSDL
 
     def draw(draw : Draw)
       return unless visible?
+
+      # Sync text entity's width/height with the resolved layout size of UIText
+      @text_entity.width = resolved_width
+      @text_entity.height = resolved_height
 
       # Draw background first if background_color is set
       draw_background(draw)
@@ -179,31 +205,34 @@ module GSDL
       end
     end
 
-    private def recreate_text_entity(
-      font : Symbol = @text_entity.font,
-      font_size : Num = @text_entity.font_size,
-      text : String = @text_entity.text,
-      align : HorizontalAlign = @text_entity.h_align,
-      color : Color = @text_entity.color,
-      wrap_width : Int32? = self.wrap_width,
-      z_index : Int32 = @text_entity.z_index,
-      opacity : UInt8 = @text_entity.opacity,
-      weight : FontWeight = @text_entity.weight,
-      style : FontStyle = @text_entity.style
-    )
-      @text_entity = GSDL::Text.new(
-        font: font,
-        font_size: font_size,
-        text: text,
-        h_align: align,
-        color: color,
-        width: wrap_width,
-        z_index: z_index,
-        weight: weight,
-        style: style,
-        draw_relative_to_camera: false
-      )
-      @text_entity.opacity = opacity
+    private def resolved_width : Int32?
+      w = @width
+      if w == FitContent
+        nil
+      elsif w == FillParent
+        if p = @parent
+          p.width_fixed? ? (p.width - @margin.horizontal - @padding.horizontal) : nil
+        else
+          nil
+        end
+      else
+        w
+      end
+    end
+
+    private def resolved_height : Int32?
+      h = @height
+      if h == FitContent
+        nil
+      elsif h == FillParent
+        if p = @parent
+          p.height_fixed? ? (p.height - @margin.vertical - @padding.vertical) : nil
+        else
+          nil
+        end
+      else
+        h
+      end
     end
   end
 end

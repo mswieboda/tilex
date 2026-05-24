@@ -3,8 +3,9 @@ require "./container"
 module GSDL
   abstract class BoxLayout < Container
     property spacing : Int32 = 0
+    property? stretch : Bool = true
 
-    def initialize(@width = FillParent, @height = FillParent, @spacing = 0)
+    def initialize(@width = FillParent, @height = FillParent, @spacing = 0, @stretch = true)
     end
 
     # Helper to distribute remaining space among flexible children
@@ -36,9 +37,9 @@ module GSDL
           allocated = (safe_remaining * child.flex) // total_flex
 
           if is_horizontal
-            child.width = allocated - child.margin.horizontal - child.padding.horizontal
+            child.set_layout_width(allocated - child.margin.horizontal - child.padding.horizontal)
           else
-            child.height = allocated - child.margin.vertical - child.padding.vertical
+            child.set_layout_height(allocated - child.margin.vertical - child.padding.vertical)
           end
         end
       end
