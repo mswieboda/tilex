@@ -1,280 +1,209 @@
 module GSDL
   class UIText < UIElement
-    OversampleRatio = 8_f32
-
-    record WordInfo, text : String, x : Int32, y : Int32, w : Int32, h : Int32
-
-    property text : String
-    property font : Font
-    property color : Color
-    property align : Font::Align
-    property anchor : Anchor
-    property wrap_width : Int32?
-    property oversample_ratio : Float32 = OversampleRatio
-    property wrap_whitespace_visible : Bool
-    property visible_characters : Int32
-    property opacity : UInt8
-
-    @texture : Texture?
-    @layout_info = [] of WordInfo
-    @logical_width : Int32 = 0
-    @logical_height : Int32 = 0
+    getter text_entity : GSDL::Text
 
     def initialize(
-      @font = Font.default,
-      @text : String = "",
+      font : Symbol = :default,
+      text : String = "",
+      font_size : Num = 16_f32,
       @x : Int32 = 0,
       @y : Int32 = 0,
-      @color = ColorScheme.get(:ui_text),
-      @align = Font::Align::Left,
+      color = ColorScheme.get(:ui_text),
+      align : HorizontalAlign = HorizontalAlign::Left,
       @anchor : Anchor = Anchor::TopLeft,
-      @wrap_width : Int32? = nil,
+      wrap_width : Int32? = nil,
       @z_index : Int32 = 0,
-      @oversample_ratio : Float32 = OversampleRatio,
-      @visible_characters : Int32 = -1,
-      @opacity : UInt8 = 255_u8,
-      @wrap_whitespace_visible : Bool = false,
+      opacity : UInt8 = 255_u8,
+      weight : FontWeight = FontWeight::Normal,
+      style : FontStyle = FontStyle::Regular,
     )
-      layout!
-      bake!
+      @text_entity = GSDL::Text.new(
+        font: font,
+        font_size: font_size,
+        text: text,
+        h_align: align,
+        color: color,
+        width: wrap_width,
+        z_index: z_index,
+        weight: weight,
+        style: style,
+        draw_relative_to_camera: false
+      )
+      @text_entity.opacity = opacity
+
+      @width = wrap_width || FitContent
+      @height = FitContent
     end
 
-    def text=(@text : String)
-      layout!
-      bake!
+    def text : String
+      @text_entity.text
     end
 
-    def font=(@font : Font)
-      layout!
-      bake!
+    def font : Symbol
+      @text_entity.font
     end
 
-    def color=(@color : Color)
-      bake!
+    def font_size : Num
+      @text_entity.font_size
     end
 
-    def anchor=(@anchor : Anchor)
-      layout!
-      bake!
+    def color : Color
+      @text_entity.color
     end
 
-    def wrap_width=(@wrap_width : Int32?)
-      layout!
-      bake!
+    def color=(color : Color)
+      @text_entity.color = color
     end
 
-    def oversample_ratio=(@oversample_ratio : Float32)
-      layout!
-      bake!
+    def z_index : Int32
+      @text_entity.z_index
     end
 
-    def layout!
-      @layout_info.clear
-      @logical_width = 0
-      @logical_height = 0
-      return if @text.empty?
-
-      lines = @text.split("\n")
-
-      # Use line_skip if available, otherwise font height
-      logical_line_height = @font.line_skip > 0 ? @font.line_skip : @font.height
-
-      raw_lines = [] of Array(WordInfo)
-      current_y = 0
-      max_w = 0
-
-      lines.each do |line|
-        if line.empty?
-          current_y += logical_line_height
-          next
-        end
-
-        line_words = [] of WordInfo
-        cursor_x = 0
-
-        words = line.split(/([ \t]+)/)
-        words.each do |word|
-          next if word.empty?
-
-          w, h = @font.text_size(word)
-
-          if (ww = @wrap_width) && ww > 0 && cursor_x + w > ww && !word.strip.empty?
-            raw_lines << line_words
-            line_words = [] of WordInfo
-            cursor_x = 0
-            current_y += logical_line_height
-          end
-
-          line_words << WordInfo.new(text: word, x: cursor_x, y: current_y, w: w, h: h)
-          cursor_x += w
-          max_w = Math.max(max_w, cursor_x)
-        end
-        raw_lines << line_words unless line_words.empty?
-        current_y += logical_line_height
-      end
-
-      ww = @wrap_width
-      @logical_width = (ww && ww > 0) ? ww : max_w
-      @logical_height = current_y
-
-      # Apply alignment
-      raw_lines.each do |line_words|
-        next if line_words.empty?
-
-        line_w = line_words.last.x + line_words.last.w
-        # ignore trailing whitespace for alignment
-        trailing_ws = 0
-        line_words.reverse_each do |w|
-          if w.text.strip.empty?
-            trailing_ws += w.w
-          else
-            break
-          end
-        end
-        visual_line_w = line_w - trailing_ws
-
-        offset_x = 0
-        case @align
-        when Font::Align::Center
-          offset_x = (@logical_width - visual_line_w) // 2
-        when Font::Align::Right
-          offset_x = @logical_width - visual_line_w
-        end
-        offset_x = Math.max(0, offset_x)
-
-        line_words.each do |w|
-          @layout_info << WordInfo.new(
-            text: w.text,
-            x: w.x + offset_x,
-            y: w.y,
-            w: w.w,
-            h: w.h
-          )
-        end
-      end
+    def z_index=(z : Int32)
+      @text_entity.z_index = z
     end
 
-    def bake!
-      @texture.try(&.destroy)
-      @texture = nil
+    def opacity : UInt8
+      @text_entity.opacity
+    end
 
-      return if @layout_info.empty?
+    def opacity=(op : UInt8)
+      @text_entity.opacity = op
+    end
 
-      original_size = @font.size
-      @font.size = original_size * @oversample_ratio
-      @font.align = @align
+    def weight : FontWeight
+      @text_entity.weight
+    end
 
-      baked_w = (@logical_width * @oversample_ratio).to_i
-      baked_h = (@logical_height * @oversample_ratio).to_i
+    def weight=(w : FontWeight)
+      @text_entity.weight = w
+    end
 
-      master_surface = Surface.new(width: baked_w, height: baked_h)
-      master_surface.fill(Color.new(0, 0, 0, 0)) # Transparent
+    def style : FontStyle
+      @text_entity.style
+    end
 
-      remaining_chars = @visible_characters
-      show_all = @visible_characters < 0
+    def style=(s : FontStyle)
+      @text_entity.style = s
+    end
 
-      @layout_info.each do |info|
-        break if !show_all && remaining_chars <= 0
+    def text=(text : String)
+      return if @text_entity.text == text
+      @text_entity.text = text
+      notify_size_changed
+    end
 
-        text_to_draw = info.text
-        if !show_all && text_to_draw.size > remaining_chars
-          text_to_draw = text_to_draw[0...remaining_chars]
-          remaining_chars = 0
-        elsif !show_all
-          remaining_chars -= text_to_draw.size
-        end
+    def font=(font : Symbol)
+      return if @text_entity.font == font
+      @text_entity.font = font
+      notify_size_changed
+    end
 
-        next if text_to_draw.empty?
+    def font_size=(size : Num)
+      return if font_size == size
+      recreate_text_entity(font_size: size)
+      notify_size_changed
+    end
 
-        surf = @font.render_text_blended(text_to_draw, @color)
-        if surf
-          dest_rect = Rect.new(
-            x: (info.x * @oversample_ratio).to_i,
-            y: (info.y * @oversample_ratio).to_i,
-            w: surf.width,
-            h: surf.height
-          )
-          surf.blit(nil, dest_rect, master_surface)
-          surf.destroy
-        end
-      end
+    def align : HorizontalAlign
+      @text_entity.h_align
+    end
 
-      # Restore font size
-      @font.size = original_size
+    def align=(align : HorizontalAlign)
+      return if @text_entity.h_align == align
+      @text_entity.h_align = align
+      notify_size_changed
+    end
 
-      @texture = Texture.from_surface(master_surface)
-      @texture.not_nil!.blend_mode = LibSDL3::SDL_BLENDMODE_BLEND
-      master_surface.destroy
+    def wrap_width : Int32?
+      w = @width
+      w > 0 ? w : nil
+    end
+
+    def wrap_width=(val : Int32?)
+      @width = val || FitContent
+      @text_entity.width = val
+      notify_size_changed
     end
 
     def width : Int32
-      @logical_width
+      w = @width
+      if w == FitContent
+        @text_entity.width.to_i
+      elsif w == FillParent
+        if p = @parent
+          p.width_fixed? ? (p.width - @margin.horizontal - @padding.horizontal) : 0
+        else
+          0
+        end
+      else
+        w
+      end
     end
 
     def height : Int32
-      @logical_height
-    end
-
-    def render_width : Num
-      width
-    end
-
-    def render_height : Num
-      height
-    end
-
-    def render_x : Num
-      global_x
-    end
-
-    def render_y : Num
-      global_y
+      h = @height
+      if h == FitContent
+        @text_entity.height.to_i
+      elsif h == FillParent
+        if p = @parent
+          p.height_fixed? ? (p.height - @margin.vertical - @padding.vertical) : 0
+        else
+          0
+        end
+      else
+        h
+      end
     end
 
     def draw(draw : Draw)
-      return unless tex = @texture
+      return unless visible?
 
-      dest_rect = FRect.new(
-        x: render_x.to_f32,
-        y: render_y.to_f32,
-        w: render_width.to_f32,
-        h: render_height.to_f32
-      )
+      # Draw background first if background_color is set
+      draw_background(draw)
 
-      tex.alpha_mod = opacity
+      # Position the text entity exactly where we are drawing
+      # content_x and content_y already account for parent and padding/margins
+      @text_entity.x = content_x
+      @text_entity.y = content_y
+      @text_entity.z_index = z_index
 
-      draw.texture_rotated(
-        texture: tex,
-        dest_rect: dest_rect,
-        z_index: z_index
-      )
-
-      tex.alpha_mod = 255_u8
+      # Render the text entity
+      @text_entity.draw(draw)
     end
 
-    def destroy
-      @texture.try(&.destroy)
-    end
-
-    def cursor_pos(char_index : Int32) : Point
-      return Point.new(0, 0) if @layout_info.empty? || char_index <= 0
-
-      count = 0
-      @layout_info.each do |info|
-        if count + info.text.size >= char_index
-          # Found the word containing the character
-          remaining = char_index - count
-          prefix = info.text[0...remaining]
-          offset_x, _ = @font.text_size(prefix)
-          return Point.new(info.x + offset_x, info.y)
-        end
-        count += info.text.size
+    private def notify_size_changed
+      dirty_position!
+      if p = @parent
+        p.dirty_layout! if p.is_a?(Container)
       end
+    end
 
-      # If index is beyond total text, return end of last word
-      last = @layout_info.last
-
-      return Point.new(last.x + last.w, last.y)
+    private def recreate_text_entity(
+      font : Symbol = @text_entity.font,
+      font_size : Num = @text_entity.font_size,
+      text : String = @text_entity.text,
+      align : HorizontalAlign = @text_entity.h_align,
+      color : Color = @text_entity.color,
+      wrap_width : Int32? = self.wrap_width,
+      z_index : Int32 = @text_entity.z_index,
+      opacity : UInt8 = @text_entity.opacity,
+      weight : FontWeight = @text_entity.weight,
+      style : FontStyle = @text_entity.style
+    )
+      @text_entity = GSDL::Text.new(
+        font: font,
+        font_size: font_size,
+        text: text,
+        h_align: align,
+        color: color,
+        width: wrap_width,
+        z_index: z_index,
+        weight: weight,
+        style: style,
+        draw_relative_to_camera: false
+      )
+      @text_entity.opacity = opacity
     end
   end
 end

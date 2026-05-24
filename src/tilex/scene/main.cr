@@ -31,10 +31,9 @@ module Tilex
       status_bar.background_color = GSDL::Color::Red
 
       # status bar -> text
-      font = GSDL::Font.default(32_f32)
-      status_bar.add_child(GSDL::UIText.new(font, "Pos: 0,0"))
-      status_bar.add_child(GSDL::UIText.new(font, "Layer: Background"))
-      status_bar.add_child(GSDL::UIText.new(font, "Zoom: 100%"))
+      status_bar.add_child(GSDL::UIText.new(text: "Pos: 0,0", font_size: 32))
+      status_bar.add_child(GSDL::UIText.new(text: "Layer: Background", font_size: 32))
+      status_bar.add_child(GSDL::UIText.new(text: "Zoom: 100%", font_size: 32))
     end
 
     def update(dt : Float32)

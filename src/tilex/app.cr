@@ -15,6 +15,8 @@ module Tilex
     end
 
     def init
+      self.target_fps = 60
+
       push(Scene::Main.new)
     end
 

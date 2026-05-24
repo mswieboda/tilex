@@ -50,6 +50,7 @@ module GSDL
             h: inner_height,
           ),
           color: color,
+          z_index: z_index,
         )
       end
     end

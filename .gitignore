@@ -16,5 +16,8 @@
 .gemini/
 /GEMINI.md
 
+# Antigravity CLI agent specfic project settings, context, skills, plugins
+.antigravitycli/
+
 # bv (beads viewer) local config and caches
 .bv/
