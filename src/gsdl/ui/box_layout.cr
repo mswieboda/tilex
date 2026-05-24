@@ -7,24 +7,6 @@ module GSDL
     def initialize(@width = FillParent, @height = FillParent, @spacing = 0)
     end
 
-    # Overriding add_child to mark the layout as "dirty"
-    def add_child(child : UIElement)
-      @dirty_layout = true
-      super(child)
-    end
-
-    # Overriding remove_child to mark the layout as "dirty"
-    def remove_child(child : UIElement)
-      @dirty_layout = true
-      super(child)
-    end
-
-    def draw(draw : Draw)
-      layout! if @dirty_layout
-
-      super(draw)
-    end
-
     # Helper to distribute remaining space among flexible children
     protected def calculate_flex_sizes(total_available : Int32, is_horizontal : Bool)
       flex_children = [] of UIElement

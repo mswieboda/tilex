@@ -14,18 +14,28 @@ module Tilex
       vbox = @canvas.add_child(GSDL::VBox.new)
 
       # vbox canvas box test
-      box = vbox.add_child(GSDL::Canvas.new)
-      box.flex = 1_u8
-      box.background_color = GSDL::Color::Magenta
-      box.padding = GSDL::UISpacing.new(all: 32)
-      box.margin = GSDL::UISpacing.new(all: 16)
-      box_inner = box.add_child(GSDL::Canvas.new)
-      box_inner.margin = GSDL::UISpacing.new(all: 16)
-      box_inner.background_color = GSDL::Color::LimeGreen
+      hbox = vbox.add_child(GSDL::HBox.new)
+      hbox.flex = 1
+      hbox.background_color = GSDL::Color::Magenta
+
+      # left panels
+      panel_left = hbox.add_child(GSDL::Canvas.new)
+      panel_left.background_color = GSDL::Color::Blue
+
+      # main center panel
+      panel_main = hbox.add_child(GSDL::Canvas.new)
+      panel_main.flex = 4
+      panel_main.background_color = GSDL::Color::LimeGreen
+
+      # right panel
+      panel_right = hbox.add_child(GSDL::Canvas.new)
+      panel_right.flex = 0
+      panel_right.width = 33
+      panel_right.background_color = GSDL::Color::Purple
 
       # vbox -> status bar
       status_bar = vbox.add_child(GSDL::StatusBar.new(spacing: 32, anchor: GSDL::Anchor::BottomLeft))
-      status_bar.flex = 0_u8
+      status_bar.flex = 0
       status_bar.margin = GSDL::UISpacing.new(horizontal: 16, vertical: 8)
       status_bar.padding = GSDL::UISpacing.new(all: 8)
       status_bar.background_color = GSDL::Color::Red

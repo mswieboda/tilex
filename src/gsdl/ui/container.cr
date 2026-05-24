@@ -7,7 +7,11 @@ module GSDL
     @dirty_layout = true
 
     protected def dirty_layout!
+      return if @dirty_layout
       @dirty_layout = true
+
+      # Propagate down to children since our layout change affects their dimensions/positions
+      @children.each(&.dirty_layout!)
 
       # if the parent's size depends on this container (FIT_CONTENT),
       # we must also mark the parent as dirty.
@@ -33,6 +37,7 @@ module GSDL
       @children << child
 
       dirty_position!
+      dirty_layout!
 
       child
     end
@@ -43,6 +48,7 @@ module GSDL
       end
 
       dirty_position!
+      dirty_layout!
 
       child
     end
@@ -53,9 +59,16 @@ module GSDL
       @children.clear
 
       dirty_position!
+      dirty_layout!
+    end
+
+    def layout!
+      @dirty_layout = false
     end
 
     def draw(draw : Draw)
+      layout! if @dirty_layout
+
       draw_background(draw)
       @children.each(&.draw(draw))
     end

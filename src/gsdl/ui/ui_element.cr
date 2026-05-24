@@ -16,7 +16,7 @@ module GSDL
 
     # The "Shares" this element takes in a BoxLayout
     # 0 = Fixed/Fit, 1+ = Flex Fill
-    getter flex : UInt8 = 0_u8
+    getter flex : UInt8 = 1_u8
 
     # TODO: implement border
     # property border : UISpacing = UISpacing.new(all: 0)
@@ -71,12 +71,14 @@ module GSDL
       return if @width == width
       @width = width
       dirty_position!
+      dirty_layout!
     end
 
     def height=(height : Int32)
       return if @height == height
       @height = height
       dirty_position!
+      dirty_layout!
     end
 
     def anchor=(anchor : Anchor)
@@ -102,6 +104,10 @@ module GSDL
 
     protected def dirty_position!
       @dirty_position = true
+    end
+
+    protected def dirty_layout!
+      # Base implementation does nothing
     end
 
     protected def dirty_position? : Bool
