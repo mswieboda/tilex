@@ -40,6 +40,7 @@ module GSDL
     # Tree Structure
     property? visible : Bool = true
     property parent : UIElement?
+    property? swallows_events : Bool = false
 
     @dirty_position : Bool = true
     @global_position_cache : {Int32, Int32} = {0, 0}
@@ -49,6 +50,46 @@ module GSDL
     end
 
     def update(dt : Float32)
+    end
+
+    def contains_point?(mx : Int32, my : Int32) : Bool
+      return false unless visible?
+      mx >= inner_x && mx < (inner_x + inner_width) && my >= inner_y && my < (inner_y + inner_height)
+    end
+
+    def find_element_at(mx : Int32, my : Int32) : UIElement?
+      return nil unless visible? && (contains_point?(mx, my) || (self.is_a?(Container) && !self.clips_children?))
+
+      if self.is_a?(Container)
+        self.children.sort_by(&.effective_z_index).reverse_each do |child|
+          if found = child.find_element_at(mx, my)
+            return found
+          end
+        end
+      end
+
+      if contains_point?(mx, my)
+        self
+      else
+        nil
+      end
+    end
+
+
+    def on_mouse_down(event : GSDL::Event) : Bool
+      swallows_events?
+    end
+
+    def on_mouse_up(event : GSDL::Event) : Bool
+      swallows_events?
+    end
+
+    def on_mouse_move(event : GSDL::Event) : Bool
+      swallows_events?
+    end
+
+    def on_mouse_wheel(event : GSDL::Event) : Bool
+      swallows_events?
     end
 
     def draw_background(draw : Draw)
@@ -208,6 +249,18 @@ module GSDL
       end
       nil
     end
+
+    protected def root_canvas : RootCanvas?
+      curr = self
+      while curr
+        if curr.is_a?(RootCanvas)
+          return curr
+        end
+        curr = curr.parent
+      end
+      nil
+    end
+
 
     private def update_position_cache
       if dirty_position?

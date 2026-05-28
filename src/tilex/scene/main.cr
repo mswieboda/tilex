@@ -14,6 +14,7 @@ module Tilex
     @btn_zoom_reset : GSDL::UIButton
     @btn_pan_reset : GSDL::UIButton
     @btn_clip_toggle : GSDL::UIButton
+    @movable_box : GSDL::Canvas
 
     # Colors
     BgDark = GSDL::Color.parse("#121214")      # Obsidian
@@ -44,6 +45,7 @@ module Tilex
       panel_left.background_color = SidebarDark
       panel_left.padding = GSDL::UISpacing.new(all: 16)
       panel_left.z_index = 10
+      panel_left.swallows_events = true
 
       panel_left.add_child(GSDL::UIText.new(
         text: "NAVIGATION HELP",
@@ -67,6 +69,7 @@ module Tilex
       @viewport.flex = 4
       @viewport.background_color = BgDark
       @viewport.z_index = 50
+      @viewport.clips_children = true
       hbox.add_child(@viewport)
 
       # Instantiating the input event handler
@@ -80,6 +83,7 @@ module Tilex
       ))
       card1.background_color = AccentIndigo
       card1.padding = GSDL::UISpacing.new(all: 16)
+      # card1.swallows_events = true
       card1.add_child(GSDL::UIText.new(text: "Interactive Panel A\nx: 50, y: 50", font_size: 18, color: TextLight))
 
       # Card 2 (Center-Right)
@@ -88,6 +92,7 @@ module Tilex
       ))
       card2.background_color = AccentViolet
       card2.padding = GSDL::UISpacing.new(all: 16)
+      # card2.swallows_events = true
       card2.add_child(GSDL::UIText.new(text: "Interactive Panel B\nx: 450, y: 150", font_size: 18, color: TextLight))
 
       # Card 3 (Way Out of Bounds to verify panning and clipping)
@@ -96,6 +101,7 @@ module Tilex
       ))
       card3.background_color = GSDL::Color.parse("#0ea5e9") # Sky blue
       card3.padding = GSDL::UISpacing.new(all: 16)
+      # card3.swallows_events = true
       card3.add_child(GSDL::UIText.new(text: "Far-right Element\nx: 900, y: 400", font_size: 18, color: TextLight))
 
       # --- RIGHT SIDEBAR (Control Buttons) ---
@@ -105,6 +111,7 @@ module Tilex
       panel_right.background_color = SidebarDark
       panel_right.padding = GSDL::UISpacing.new(all: 16)
       panel_right.z_index = 10
+      panel_right.swallows_events = true
 
       panel_right.add_child(GSDL::UIText.new(
         text: "VIEWPORT CONTROLS",
@@ -179,7 +186,7 @@ module Tilex
       end)
 
       @btn_clip_toggle = panel_right.add_child(GSDL::UIButton.new(
-        text: "Clip: OFF",
+        text: "Clip: ON",
         width: button_width,
         height: button_height,
         x: 0,
@@ -195,6 +202,14 @@ module Tilex
         @viewport.clips_children = !@viewport.clips_children?
         @btn_clip_toggle.text = "Clip: #{@viewport.clips_children? ? "ON" : "OFF"}"
       }
+
+      # Test Movable Box
+      @movable_box = panel_right.add_child(GSDL::Canvas.new(
+        width: 60, height: 60, x: 10, y: 320
+      ))
+      @movable_box.background_color = GSDL::Color.parse("#f43f5e") # Pink
+      @movable_box.z_index = 100
+      @movable_box.swallows_events = true
 
       # --- STATUS BAR ---
       status_bar = vbox.add_child(GSDL::StatusBar.new(spacing: 8))
@@ -221,29 +236,48 @@ module Tilex
         transition_out.start
       end
 
-      # 1. WASD/Arrow keys keyboard panning (camera moves relative to zoom level)
+      # 1. WASD keyboard panning (camera moves relative to zoom level)
       pan_speed = 400_f32 * dt / @viewport.zoom
-      if GSDL::Keys.pressed?(GSDL::Keys::W) || GSDL::Keys.pressed?(GSDL::Keys::Up)
+      if GSDL::Keys.pressed?(GSDL::Keys::W)
         @viewport.pan_y -= pan_speed
       end
-      if GSDL::Keys.pressed?(GSDL::Keys::S) || GSDL::Keys.pressed?(GSDL::Keys::Down)
+      if GSDL::Keys.pressed?(GSDL::Keys::S)
         @viewport.pan_y += pan_speed
       end
-      if GSDL::Keys.pressed?(GSDL::Keys::A) || GSDL::Keys.pressed?(GSDL::Keys::Left)
+      if GSDL::Keys.pressed?(GSDL::Keys::A)
         @viewport.pan_x -= pan_speed
       end
-      if GSDL::Keys.pressed?(GSDL::Keys::D) || GSDL::Keys.pressed?(GSDL::Keys::Right)
+      if GSDL::Keys.pressed?(GSDL::Keys::D)
         @viewport.pan_x += pan_speed
       end
 
+      # 2. Arrow keys move the pink test box
+      box_speed = 300_f32 * dt
+      if GSDL::Keys.pressed?(GSDL::Keys::Up)
+        @movable_box.y -= box_speed.to_i
+      end
+      if GSDL::Keys.pressed?(GSDL::Keys::Down)
+        @movable_box.y += box_speed.to_i
+      end
+      if GSDL::Keys.pressed?(GSDL::Keys::Left)
+        @movable_box.x -= box_speed.to_i
+      end
+      if GSDL::Keys.pressed?(GSDL::Keys::Right)
+        @movable_box.x += box_speed.to_i
+      end
+
+      # Only allow mouse interactions on the viewport if we aren't hovering over an event-swallowing UI element
+      ui_element = @canvas.find_element_at(GSDL::Mouse.x, GSDL::Mouse.y)
+      has_active_ui = ui_element && ui_element.swallows_events?
+
       # 2. Right-click dragging to pan
-      if GSDL::Mouse.dragging?(GSDL::Mouse::ButtonRight)
+      if !has_active_ui && GSDL::Mouse.dragging?(GSDL::Mouse::ButtonRight)
         @viewport.pan_x -= GSDL::Mouse.dx / @viewport.zoom
         @viewport.pan_y -= GSDL::Mouse.dy / @viewport.zoom
       end
 
       # 3. Mouse Wheel zoom (handled globally using Mouse.wheel_y)
-      if GSDL::Mouse.in?(@viewport.content_x, @viewport.content_y, @viewport.width, @viewport.height)
+      if !has_active_ui && GSDL::Mouse.in?(@viewport.content_x, @viewport.content_y, @viewport.width, @viewport.height)
         wy = GSDL::Mouse.wheel_y
         if wy != 0
           zoom_factor = wy > 0 ? 1.1_f32 : 1.0_f32 / 1.1_f32

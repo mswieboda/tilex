@@ -38,6 +38,7 @@ module GSDL
       @hover_text_color = hover_text_color.is_a?(String) ? Color.parse(hover_text_color) : hover_text_color
 
       @background_color = @default_background_color
+      @swallows_events = true
 
       # Create and add the text label
       @label = GSDL::UIText.new(
@@ -99,8 +100,18 @@ module GSDL
     def update(dt : Float32)
       super(dt)
 
-      # Determine if mouse is currently over this button
-      hovered = GSDL::Mouse.in?(content_x, content_y, content_width, content_height)
+      # Determine if mouse is currently over this button, respecting z-ordering & hit-testing
+      hovered = false
+      if root = root_canvas
+        curr = root.find_element_at(GSDL::Mouse.x, GSDL::Mouse.y)
+        while curr
+          if curr == self
+            hovered = true
+            break
+          end
+          curr = curr.parent
+        end
+      end
 
       # If hover state changed, trigger the callback
       if hovered != @was_hovered

@@ -87,6 +87,46 @@ module GSDL
       @children.each(&.update(dt))
     end
 
+    def on_mouse_down(event : GSDL::Event) : Bool
+      @children.sort_by(&.effective_z_index).reverse_each do |child|
+        next unless child.visible?
+        if child.contains_point?(GSDL::Mouse.x, GSDL::Mouse.y)
+          return true if child.on_mouse_down(event)
+        end
+      end
+      super(event)
+    end
+
+    def on_mouse_up(event : GSDL::Event) : Bool
+      @children.sort_by(&.effective_z_index).reverse_each do |child|
+        next unless child.visible?
+        if child.contains_point?(GSDL::Mouse.x, GSDL::Mouse.y)
+          return true if child.on_mouse_up(event)
+        end
+      end
+      super(event)
+    end
+
+    def on_mouse_move(event : GSDL::Event) : Bool
+      @children.sort_by(&.effective_z_index).reverse_each do |child|
+        next unless child.visible?
+        if child.contains_point?(GSDL::Mouse.x, GSDL::Mouse.y)
+          return true if child.on_mouse_move(event)
+        end
+      end
+      super(event)
+    end
+
+    def on_mouse_wheel(event : GSDL::Event) : Bool
+      @children.sort_by(&.effective_z_index).reverse_each do |child|
+        next unless child.visible?
+        if child.contains_point?(GSDL::Mouse.x, GSDL::Mouse.y)
+          return true if child.on_mouse_wheel(event)
+        end
+      end
+      super(event)
+    end
+
     protected def dirty_position!
       return if @dirty_position
 

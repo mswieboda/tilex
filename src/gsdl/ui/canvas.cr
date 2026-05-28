@@ -36,5 +36,20 @@ module GSDL
       self.width = width
       self.height = height
     end
+
+    def handle_event(event : GSDL::Event) : Bool
+      case event.type
+      when GSDL::Events::MouseDown
+        on_mouse_down(event)
+      when GSDL::Events::MouseUp
+        on_mouse_up(event)
+      when GSDL::Events::MouseMotion
+        on_mouse_move(event)
+      when GSDL::Events::MouseWheel
+        on_mouse_wheel(event)
+      else
+        false
+      end
+    end
   end
 end
