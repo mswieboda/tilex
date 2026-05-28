@@ -179,6 +179,29 @@ module Tilex
       ))
       preset_dropdown.flex = 0_u8
 
+      # Register palm-tree texture
+      GSDL::TextureManager.register_pair(:palm_tree, "assets/gfx/palm-tree.png")
+
+      # Add our new GSDL::UI::Image element
+      lbl_tree = left_vbox.add_child(GSDL::UI::Text.new(
+        text: "GSDL::UI::Image Demo:",
+        font_size: 14,
+        color: TextLight
+      ))
+      lbl_tree.flex = 0_u8
+      lbl_tree.margin = GSDL::UI::Spacing.new(16, 0, 8, 0)
+
+      tree_image = left_vbox.add_child(GSDL::UI::Image.new(
+        id: :palm_tree,
+        resize_mode: GSDL::UI::ResizeMode::Stretch,
+        width: 120,
+        height: 120
+      ))
+      tree_image.flex = 0_u8
+      tree_image.padding = GSDL::UI::Spacing.new(all: 8)
+      tree_image.background_color = ButtonDefault
+      tree_image.margin = GSDL::UI::Spacing.new(0, 0, 8, 0)
+
       preset_dropdown.on_change = ->(option : String, index : Int32) {
         case index
         when 0 # Default View
