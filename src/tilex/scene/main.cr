@@ -39,30 +39,17 @@ module Tilex
       hbox.flex = 1
       hbox.background_color = BgDark
 
-      # --- LEFT SIDEBAR (Help & Info) ---
+      # --- LEFT SIDEBAR (Controls & Theme) ---
       panel_left = hbox.add_child(GSDL::Canvas.new)
-      panel_left.flex = 1_u8
+      panel_left.width = 280
+      panel_left.flex = 0_u8
       panel_left.background_color = SidebarDark
       panel_left.padding = GSDL::UISpacing.new(all: 16)
       panel_left.z_index = 10
       panel_left.swallows_events = true
 
-      panel_left.add_child(GSDL::UIText.new(
-        text: "NAVIGATION HELP",
-        font_size: 20,
-        color: AccentIndigo,
-        x: 0, y: 10,
-        width: GSDL::FillParent
-      ))
-
-      help_text = "• Right-Click + Drag\n  to pan around\n\n• Mouse Scroll Wheel\n  to zoom on cursor\n\n• WASD or Arrow Keys\n  to slide camera\n\n• Click side buttons\n  for direct actions\n\n• Press ESC to quit"
-      panel_left.add_child(GSDL::UIText.new(
-        text: help_text,
-        font_size: 16,
-        color: TextLight,
-        x: 0, y: 50,
-        width: GSDL::FillParent
-      ))
+      left_vbox = panel_left.add_child(GSDL::VBox.new(spacing: 8))
+      left_vbox.flex = 1_u8
 
       # --- CENTER VIEWPORT (The zoomable/panning area) ---
       @viewport = GSDL::Viewport.new
@@ -101,8 +88,76 @@ module Tilex
       ))
       card3.background_color = GSDL::Color.parse("#0ea5e9") # Sky blue
       card3.padding = GSDL::UISpacing.new(all: 16)
-      # card3.swallows_events = true
+      card3.swallows_events = true
       card3.add_child(GSDL::UIText.new(text: "Far-right Element\nx: 900, y: 400", font_size: 18, color: TextLight))
+
+      # --- SIDEBAR INTERACTIVE FORM ELEMENTS ---
+      title_theme = left_vbox.add_child(GSDL::UIText.new(
+        text: "THEME & CONTROLS",
+        font_size: 18,
+        color: AccentIndigo
+      ))
+      title_theme.flex = 0_u8
+      title_theme.margin = GSDL::UISpacing.new(0, 0, 8, 0)
+
+      # Checkbox to toggle card visibility in the viewport
+      cb_cards_visible = left_vbox.add_child(GSDL::UICheckbox.new(
+        text: "Show Viewport Cards",
+        checked: true,
+        hover_text_color: AccentIndigo
+      ))
+      cb_cards_visible.flex = 0_u8
+      cb_cards_visible.margin = GSDL::UISpacing.new(0, 0, 16, 0)
+      cb_cards_visible.on_toggle = ->(checked : Bool) {
+        card1.visible = checked
+        card2.visible = checked
+        card3.visible = checked
+      }
+
+      # Radio button group to change the background color of panel_left
+      lbl_theme = left_vbox.add_child(GSDL::UIText.new(
+        text: "Left Sidebar Theme:",
+        font_size: 14,
+        color: TextLight
+      ))
+      lbl_theme.flex = 0_u8
+      lbl_theme.margin = GSDL::UISpacing.new(0, 0, 8, 0)
+
+      radio_dark = left_vbox.add_child(GSDL::UIRadioButton.new(
+        text: "Default Dark Theme",
+        group: :left_theme,
+        checked: true,
+        hover_text_color: AccentIndigo
+      ))
+      radio_dark.flex = 0_u8
+      radio_dark.margin = GSDL::UISpacing.new(0, 0, 6, 0)
+      radio_dark.on_select = -> {
+        panel_left.background_color = SidebarDark
+      }
+
+      radio_indigo = left_vbox.add_child(GSDL::UIRadioButton.new(
+        text: "Deep Indigo Theme",
+        group: :left_theme,
+        checked: false,
+        hover_text_color: AccentIndigo
+      ))
+      radio_indigo.flex = 0_u8
+      radio_indigo.margin = GSDL::UISpacing.new(0, 0, 6, 0)
+      radio_indigo.on_select = -> {
+        panel_left.background_color = GSDL::Color.parse("#1e1b4b")
+      }
+
+      radio_violet = left_vbox.add_child(GSDL::UIRadioButton.new(
+        text: "Midnight Violet Theme",
+        group: :left_theme,
+        checked: false,
+        hover_text_color: AccentIndigo
+      ))
+      radio_violet.flex = 0_u8
+      radio_violet.on_select = -> {
+        panel_left.background_color = GSDL::Color.parse("#120b24")
+      }
+
 
       # --- RIGHT SIDEBAR (Control Buttons) ---
       panel_right = hbox.add_child(GSDL::Canvas.new)

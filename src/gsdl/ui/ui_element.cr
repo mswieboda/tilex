@@ -46,6 +46,7 @@ module GSDL
     @global_position_cache : {Int32, Int32} = {0, 0}
 
     def draw(draw : Draw)
+      return unless visible?
       draw_background(draw)
     end
 

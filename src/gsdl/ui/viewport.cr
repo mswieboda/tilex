@@ -54,6 +54,7 @@ module GSDL
     end
 
     def draw(draw : Draw)
+      return unless visible?
       layout! if @dirty_layout
 
       draw_background(draw)
@@ -64,7 +65,9 @@ module GSDL
       end
 
       # 2. Draw children normally (they will query their virtualized coordinates on-the-fly)
-      @children.each(&.draw(draw))
+      @children.each do |child|
+        child.draw(draw) if child.visible?
+      end
 
       if clips_children?
         draw.pop_clip

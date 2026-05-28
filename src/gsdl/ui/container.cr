@@ -69,16 +69,21 @@ module GSDL
     end
 
     def draw(draw : Draw)
+      return unless visible?
       layout! if @dirty_layout
 
       draw_background(draw)
 
       if clips_children?
         draw.push_clip(GSDL::Rect.new(content_x, content_y, content_width, content_height))
-        @children.each(&.draw(draw))
+        @children.each do |child|
+          child.draw(draw) if child.visible?
+        end
         draw.pop_clip
       else
-        @children.each(&.draw(draw))
+        @children.each do |child|
+          child.draw(draw) if child.visible?
+        end
       end
     end
 
