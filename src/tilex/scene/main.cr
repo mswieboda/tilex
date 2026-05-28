@@ -158,6 +158,50 @@ module Tilex
         panel_left.background_color = GSDL::Color.parse("#120b24")
       }
 
+      # --- Dropdown for Viewport Presets ---
+      lbl_preset = left_vbox.add_child(GSDL::UI::Text.new(
+        text: "Viewport Preset:",
+        font_size: 14,
+        color: TextLight
+      ))
+      lbl_preset.flex = 0_u8
+      lbl_preset.margin = GSDL::UI::Spacing.new(16, 0, 8, 0)
+
+      presets = ["Default View", "Focus Card A", "Focus Card B", "Bird's-Eye View"]
+      preset_dropdown = left_vbox.add_child(GSDL::UI::Dropdown.new(
+        options: presets,
+        initial_index: 0,
+        height: 32,
+        header_background_color: ButtonDefault,
+        list_background_color: PanelDark,
+        hover_background_color: AccentIndigo,
+        text_color: TextLight
+      ))
+      preset_dropdown.flex = 0_u8
+
+      preset_dropdown.on_change = ->(option : String, index : Int32) {
+        case index
+        when 0 # Default View
+          @viewport.zoom_to(1.0_f32)
+          @viewport.pan_x = 0_f32
+          @viewport.pan_y = 0_f32
+        when 1 # Focus Card A
+          @viewport.zoom_to(1.5_f32)
+          @viewport.pan_x = 200_f32 - (@viewport.width / 2.0_f32 / 1.5_f32)
+          @viewport.pan_y = 150_f32 - (@viewport.height / 2.0_f32 / 1.5_f32)
+        when 2 # Focus Card B
+          @viewport.zoom_to(1.5_f32)
+          @viewport.pan_x = 600_f32 - (@viewport.width / 2.0_f32 / 1.5_f32)
+          @viewport.pan_y = 250_f32 - (@viewport.height / 2.0_f32 / 1.5_f32)
+        when 3 # Bird's-Eye View
+          @viewport.zoom_to(0.5_f32)
+          @viewport.pan_x = 200_f32
+          @viewport.pan_y = 100_f32
+        end
+      }
+
+
+
 
       # --- RIGHT SIDEBAR (Control Buttons) ---
       panel_right = hbox.add_child(GSDL::UI::Canvas.new)
