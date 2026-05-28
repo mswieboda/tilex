@@ -1,6 +1,7 @@
 module GSDL
   class UIText < UIElement
     getter text_entity : GSDL::Text
+    @original_font_size : Float32
 
     def initialize(
       font : Symbol = :default,
@@ -21,6 +22,7 @@ module GSDL
     )
       @width = width || FitContent
       @height = height || FitContent
+      @original_font_size = font_size.to_f32
       @text_entity = GSDL::Text.new(
         font: font,
         font_size: font_size,
@@ -47,7 +49,7 @@ module GSDL
     end
 
     def font_size : Num
-      @text_entity.font_size
+      @original_font_size
     end
 
     def color : Color
@@ -103,7 +105,8 @@ module GSDL
     end
 
     def font_size=(size : Num)
-      return if font_size == size
+      return if @original_font_size == size.to_f32
+      @original_font_size = size.to_f32
       @text_entity.font_size = size
       notify_size_changed
     end
@@ -181,9 +184,17 @@ module GSDL
     def draw(draw : Draw)
       return unless visible?
 
-      # Sync text entity's width/height with the resolved layout size of UIText
-      @text_entity.width = resolved_width
-      @text_entity.height = resolved_height
+      # 1. Dynamically scale the font size and bounds of the text entity on-the-fly
+      if vp = viewport_ancestor
+        @text_entity.font_size = @original_font_size * vp.zoom
+        # Scale the text entity wrapping width/height if set
+        @text_entity.width = resolved_width.try { |w| (w * vp.zoom).to_i }
+        @text_entity.height = resolved_height.try { |h| (h * vp.zoom).to_i }
+      else
+        @text_entity.font_size = @original_font_size
+        @text_entity.width = resolved_width
+        @text_entity.height = resolved_height
+      end
 
       # Draw background first if background_color is set
       draw_background(draw)

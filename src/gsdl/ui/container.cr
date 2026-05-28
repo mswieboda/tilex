@@ -74,7 +74,7 @@ module GSDL
       draw_background(draw)
 
       if clips_children?
-        draw.push_clip(GSDL::Rect.new(content_x, content_y, width, height))
+        draw.push_clip(GSDL::Rect.new(content_x, content_y, content_width, content_height))
         @children.each(&.draw(draw))
         draw.pop_clip
       else

@@ -186,114 +186,191 @@ module GSDL
       @y = off_y
     end
 
-    # Logic to calculate the "Actual" draw position based on parent/anchors
-    # cached, recalculated when dirty_position? from other variable changes
-    def global_position : {Int32, Int32}
-      # If we or our parent have a dirty_position?, we must recalculate
+    # Ancestor Helper (protected, so subclasses of UIElement can access, but hidden from public API)
+    protected def viewport_ancestor : Viewport?
+      p = @parent
+      while p
+        if p.is_a?(Viewport)
+          return p
+        end
+        p = p.parent
+      end
+      nil
+    end
+
+    private def update_position_cache
       if dirty_position?
         @global_position_cache = calculate_global_position
         @dirty_position = false
       end
+    end
 
+    # Unscaled coordinates and dimensions (protected, for internal layout and nested coordinate composition)
+    protected def unscaled_global_position : {Int32, Int32}
+      update_position_cache
       @global_position_cache
     end
 
-    # def calculate_global_position : {Int32, Int32}
-    #   # 1. Start with the local relative offset
-    #   base_x = self.x
-    #   base_y = self.y
+    protected def unscaled_global_x : Int32
+      unscaled_global_position[0]
+    end
 
-    #   # 2. If there's no parent, we are at the root (window level)
-    #   if (p = @parent).nil?
-    #     return {base_x, base_y}
-    #   end
+    protected def unscaled_global_y : Int32
+      unscaled_global_position[1]
+    end
 
-    #   # 3. Get the parent's global position first (recursion)
-    #   px, py = p.global_position
+    protected def unscaled_inner_position : {Int32, Int32}
+      ugx, ugy = unscaled_global_position
+      {ugx + @margin.left, ugy + @margin.top}
+    end
 
-    #   # Note: parent width/height used for anchors should be "inner" size
-    #   inner_pw = p.width # - p.padding.horizontal
-    #   inner_ph = p.height # - p.padding.vertical
+    protected def unscaled_inner_x : Int32
+      unscaled_inner_position[0]
+    end
 
-    #   # 4. Calculate the anchor point relative to the parent's dimensions
-    #   anchor_offset_x, anchor_offset_y = calculate_anchor_offset(inner_pw, inner_ph)
+    protected def unscaled_inner_y : Int32
+      unscaled_inner_position[1]
+    end
 
-    #   # 5. Result = Parent Content Start + Anchor + Local x
-    #   {px + p.content_x + anchor_offset_x + base_x, py + p.content_y + anchor_offset_y + base_y}
-    # end
+    protected def unscaled_content_position : {Int32, Int32}
+      uix, uiy = unscaled_inner_position
+      {uix + @padding.left, uiy + @padding.top}
+    end
+
+    protected def unscaled_content_x : Int32
+      unscaled_content_position[0]
+    end
+
+    protected def unscaled_content_y : Int32
+      unscaled_content_position[1]
+    end
+
+    protected def unscaled_inner_width : Int32
+      width + @padding.horizontal
+    end
+
+    protected def unscaled_inner_height : Int32
+      height + @padding.vertical
+    end
+
+    protected def unscaled_content_width : Int32
+      width
+    end
+
+    protected def unscaled_content_height : Int32
+      height
+    end
 
     def calculate_global_position : {Int32, Int32}
-      # 1. Start with the local relative offset (set by layout! or user)
+      # Start with local relative offset
       base_x = self.x
       base_y = self.y
 
-      # 2. Root check
       if (p = @parent).nil?
         return {base_x, base_y}
       end
 
-      # 3. Result = Parent's Global Content Start + Local x/y
-      # p.content_x/y already include p.global_x/y and p.margin and p.padding
-      {p.content_x + base_x, p.content_y + base_y}
+      # We must use unscaled content_x/y of parent so layout coordinates remain stable and unscaled
+      {p.unscaled_content_x + base_x, p.unscaled_content_y + base_y}
+    end
+
+    # Public coordinate API (automatically virtualized when inside a Viewport)
+    def global_position : {Int32, Int32}
+      {global_x, global_y}
     end
 
     def global_x : Int32
-      global_position[0]
+      if vp = viewport_ancestor
+        rel_x = unscaled_global_x - vp.unscaled_content_x
+        (vp.unscaled_content_x + (rel_x + vp.pan_x) * vp.zoom).to_i
+      else
+        unscaled_global_x
+      end
     end
 
     def global_y : Int32
-      global_position[1]
+      if vp = viewport_ancestor
+        rel_y = unscaled_global_y - vp.unscaled_content_y
+        (vp.unscaled_content_y + (rel_y + vp.pan_y) * vp.zoom).to_i
+      else
+        unscaled_global_y
+      end
     end
 
-    # Returns the {x, y} of the visible Background/Padding Box
     def inner_position : {Int32, Int32}
-      gx, gy = global_position
-      {gx + @margin.left, gy + @margin.top}
+      {inner_x, inner_y}
     end
 
-    # The 'Inner' coordinate: Start of the Padding/Background.
-    # Logic: Global Position + Margin.
     def inner_x : Int32
-      inner_position[0]
+      if vp = viewport_ancestor
+        rel_x = unscaled_inner_x - vp.unscaled_content_x
+        (vp.unscaled_content_x + (rel_x + vp.pan_x) * vp.zoom).to_i
+      else
+        unscaled_inner_x
+      end
     end
 
-    # The 'Inner' coordinate: Start of the Padding/Background.
-    # Logic: Global Position + Margin.
     def inner_y : Int32
-      inner_position[1]
+      if vp = viewport_ancestor
+        rel_y = unscaled_inner_y - vp.unscaled_content_y
+        (vp.unscaled_content_y + (rel_y + vp.pan_y) * vp.zoom).to_i
+      else
+        unscaled_inner_y
+      end
     end
 
-    # The 'Visible' dimension: The box that gets a background color.
-    # Logic: Internal width + padding on both sides.
     def inner_width : Int32
-      width + @padding.horizontal
+      if vp = viewport_ancestor
+        (unscaled_inner_width * vp.zoom).to_i
+      else
+        unscaled_inner_width
+      end
     end
 
-    # The 'Visible' dimension: The box that gets a background color.
-    # Logic: Internal width + padding on both sides.
     def inner_height : Int32
-      height + @padding.vertical
+      if vp = viewport_ancestor
+        (unscaled_inner_height * vp.zoom).to_i
+      else
+        unscaled_inner_height
+      end
     end
 
     def content_x : Int32
-      inner_x + @padding.left
+      if vp = viewport_ancestor
+        rel_x = unscaled_content_x - vp.unscaled_content_x
+        (vp.unscaled_content_x + (rel_x + vp.pan_x) * vp.zoom).to_i
+      else
+        unscaled_content_x
+      end
     end
 
     def content_y : Int32
-      inner_y + @padding.top
+      if vp = viewport_ancestor
+        rel_y = unscaled_content_y - vp.unscaled_content_y
+        (vp.unscaled_content_y + (rel_y + vp.pan_y) * vp.zoom).to_i
+      else
+        unscaled_content_y
+      end
+    end
+
+    def content_width : Int32
+      if vp = viewport_ancestor
+        (unscaled_content_width * vp.zoom).to_i
+      else
+        unscaled_content_width
+      end
+    end
+
+    def content_height : Int32
+      if vp = viewport_ancestor
+        (unscaled_content_height * vp.zoom).to_i
+      else
+        unscaled_content_height
+      end
     end
 
     def layout!
       # Base implementation does nothing
-    end
-
-
-    def content_width : Int32
-      width
-    end
-
-    def content_height : Int32
-      height
     end
 
     def footprint_x : Int32
