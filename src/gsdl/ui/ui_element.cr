@@ -29,6 +29,14 @@ module GSDL
     getter anchor : Anchor = Anchor::TopLeft
     property z_index : Int32 = 0
 
+    def effective_z_index : Int32
+      if p = @parent
+        p.effective_z_index + 1 + @z_index
+      else
+        @z_index
+      end
+    end
+
     # Tree Structure
     property? visible : Bool = true
     property parent : UIElement?
@@ -50,7 +58,7 @@ module GSDL
             h: inner_height,
           ),
           color: color,
-          z_index: z_index,
+          z_index: effective_z_index,
         )
       end
     end

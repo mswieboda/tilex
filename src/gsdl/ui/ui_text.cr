@@ -203,7 +203,7 @@ module GSDL
       # content_x and content_y already account for parent and padding/margins
       @text_entity.x = content_x
       @text_entity.y = content_y
-      @text_entity.z_index = z_index
+      @text_entity.z_index = effective_z_index
 
       # Render the text entity
       @text_entity.draw(draw)

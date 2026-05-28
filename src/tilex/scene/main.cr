@@ -43,6 +43,7 @@ module Tilex
       panel_left.flex = 1_u8
       panel_left.background_color = SidebarDark
       panel_left.padding = GSDL::UISpacing.new(all: 16)
+      panel_left.z_index = 10
 
       panel_left.add_child(GSDL::UIText.new(
         text: "NAVIGATION HELP",
@@ -65,6 +66,7 @@ module Tilex
       @viewport = GSDL::Viewport.new
       @viewport.flex = 4
       @viewport.background_color = BgDark
+      @viewport.z_index = 50
       hbox.add_child(@viewport)
 
       # Instantiating the input event handler
@@ -102,6 +104,7 @@ module Tilex
       panel_right.flex = 0_u8
       panel_right.background_color = SidebarDark
       panel_right.padding = GSDL::UISpacing.new(all: 16)
+      panel_right.z_index = 10
 
       panel_right.add_child(GSDL::UIText.new(
         text: "VIEWPORT CONTROLS",
@@ -145,6 +148,7 @@ module Tilex
       status_bar.margin = GSDL::UISpacing.new(horizontal: 16, vertical: 8)
       status_bar.padding = GSDL::UISpacing.new(all: 8)
       status_bar.background_color = PanelDark
+      status_bar.z_index = 20
 
       font_size = 24
       @status_pos = GSDL::UIText.new(text: "Pan: 0, 0", font_size: font_size, v_align: GSDL::VerticalAlign::Center)
@@ -223,12 +227,6 @@ module Tilex
     end
 
     private def update_button(btn : GSDL::Canvas, &on_click_block)
-      if GSDL::Mouse.just_pressed?(GSDL::Mouse::ButtonLeft)
-        # Log to help debug coordinates
-        btn_text = btn.children.first.as?(GSDL::UIText).try(&.text) || "Button"
-        puts "CLICK DETECTED | Mouse: (#{GSDL::Mouse.x}, #{GSDL::Mouse.y}) | Button #{btn_text}: (x: #{btn.content_x}..#{btn.content_x + btn.content_width}, y: #{btn.content_y}..#{btn.content_y + btn.content_height})"
-      end
-
       if GSDL::Mouse.in?(btn.content_x, btn.content_y, btn.content_width, btn.content_height)
         btn.background_color = AccentIndigo
         if GSDL::Mouse.just_pressed?(GSDL::Mouse::ButtonLeft)
