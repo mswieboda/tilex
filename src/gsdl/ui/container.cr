@@ -82,6 +82,11 @@ module GSDL
       end
     end
 
+    def update(dt : Float32)
+      super(dt)
+      @children.each(&.update(dt))
+    end
+
     protected def dirty_position!
       return if @dirty_position
 

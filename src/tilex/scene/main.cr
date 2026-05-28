@@ -9,11 +9,11 @@ module Tilex
     @status_zoom : GSDL::UIText
 
     # Track interactive buttons
-    @btn_zoom_in : GSDL::Canvas
-    @btn_zoom_out : GSDL::Canvas
-    @btn_zoom_reset : GSDL::Canvas
-    @btn_pan_reset : GSDL::Canvas
-    @btn_clip_toggle : GSDL::Canvas
+    @btn_zoom_in : GSDL::UIButton
+    @btn_zoom_out : GSDL::UIButton
+    @btn_zoom_reset : GSDL::UIButton
+    @btn_pan_reset : GSDL::UIButton
+    @btn_clip_toggle : GSDL::UIButton
 
     # Colors
     BgDark = GSDL::Color.parse("#121214")      # Obsidian
@@ -117,30 +117,84 @@ module Tilex
       button_height = 40
       button_width = 168
 
-      @btn_zoom_in = panel_right.add_child(GSDL::Canvas.new(width: button_width, height: button_height, x: 0, y: 50))
-      @btn_zoom_in.background_color = ButtonDefault
-      @btn_zoom_in.padding = GSDL::UISpacing.new(all: 8)
-      @btn_zoom_in.add_child(GSDL::UIText.new(text: "Zoom In (+)", font_size: 16, color: TextLight))
+      @btn_zoom_in = panel_right.add_child(GSDL::UIButton.new(
+        text: "Zoom In (+)",
+        width: button_width,
+        height: button_height,
+        x: 0,
+        y: 50,
+        font_size: 16,
+        default_background_color: ButtonDefault,
+        hover_background_color: AccentIndigo,
+        default_text_color: TextLight,
+        hover_text_color: TextLight
+      ) do
+        @viewport.zoom_to(@viewport.zoom * 1.25_f32)
+      end)
 
-      @btn_zoom_out = panel_right.add_child(GSDL::Canvas.new(width: button_width, height: button_height, x: 0, y: 100))
-      @btn_zoom_out.background_color = ButtonDefault
-      @btn_zoom_out.padding = GSDL::UISpacing.new(all: 8)
-      @btn_zoom_out.add_child(GSDL::UIText.new(text: "Zoom Out (-)", font_size: 16, color: TextLight))
+      @btn_zoom_out = panel_right.add_child(GSDL::UIButton.new(
+        text: "Zoom Out (-)",
+        width: button_width,
+        height: button_height,
+        x: 0,
+        y: 100,
+        font_size: 16,
+        default_background_color: ButtonDefault,
+        hover_background_color: AccentIndigo,
+        default_text_color: TextLight,
+        hover_text_color: TextLight
+      ) do
+        @viewport.zoom_to(@viewport.zoom / 1.25_f32)
+      end)
 
-      @btn_zoom_reset = panel_right.add_child(GSDL::Canvas.new(width: button_width, height: button_height, x: 0, y: 150))
-      @btn_zoom_reset.background_color = ButtonDefault
-      @btn_zoom_reset.padding = GSDL::UISpacing.new(all: 8)
-      @btn_zoom_reset.add_child(GSDL::UIText.new(text: "Reset Zoom (1x)", font_size: 16, color: TextLight))
+      @btn_zoom_reset = panel_right.add_child(GSDL::UIButton.new(
+        text: "Reset Zoom (1x)",
+        width: button_width,
+        height: button_height,
+        x: 0,
+        y: 150,
+        font_size: 16,
+        default_background_color: ButtonDefault,
+        hover_background_color: AccentIndigo,
+        default_text_color: TextLight,
+        hover_text_color: TextLight
+      ) do
+        @viewport.zoom_to(1.0_f32)
+      end)
 
-      @btn_pan_reset = panel_right.add_child(GSDL::Canvas.new(width: button_width, height: button_height, x: 0, y: 200))
-      @btn_pan_reset.background_color = ButtonDefault
-      @btn_pan_reset.padding = GSDL::UISpacing.new(all: 8)
-      @btn_pan_reset.add_child(GSDL::UIText.new(text: "Reset Pan", font_size: 16, color: TextLight))
+      @btn_pan_reset = panel_right.add_child(GSDL::UIButton.new(
+        text: "Reset Pan",
+        width: button_width,
+        height: button_height,
+        x: 0,
+        y: 200,
+        font_size: 16,
+        default_background_color: ButtonDefault,
+        hover_background_color: AccentIndigo,
+        default_text_color: TextLight,
+        hover_text_color: TextLight
+      ) do
+        @viewport.pan_x = 0_f32
+        @viewport.pan_y = 0_f32
+      end)
 
-      @btn_clip_toggle = panel_right.add_child(GSDL::Canvas.new(width: button_width, height: button_height, x: 0, y: 250))
-      @btn_clip_toggle.background_color = ButtonDefault
-      @btn_clip_toggle.padding = GSDL::UISpacing.new(all: 8)
-      @btn_clip_toggle.add_child(GSDL::UIText.new(text: "Clip: OFF", font_size: 16, color: TextLight))
+      @btn_clip_toggle = panel_right.add_child(GSDL::UIButton.new(
+        text: "Clip: OFF",
+        width: button_width,
+        height: button_height,
+        x: 0,
+        y: 250,
+        font_size: 16,
+        default_background_color: ButtonDefault,
+        hover_background_color: AccentIndigo,
+        default_text_color: TextLight,
+        hover_text_color: TextLight
+      ))
+
+      @btn_clip_toggle.on_click = -> {
+        @viewport.clips_children = !@viewport.clips_children?
+        @btn_clip_toggle.text = "Clip: #{@viewport.clips_children? ? "ON" : "OFF"}"
+      }
 
       # --- STATUS BAR ---
       status_bar = vbox.add_child(GSDL::StatusBar.new(spacing: 8))
@@ -161,6 +215,8 @@ module Tilex
     end
 
     def update(dt : Float32)
+      @canvas.update(dt)
+
       if GSDL::Keys.just_pressed?(GSDL::Keys::Escape)
         transition_out.start
       end
@@ -195,46 +251,9 @@ module Tilex
         end
       end
 
-      # 4. Button Interactions & Micro-animations (hover transitions)
-      update_button(@btn_zoom_in) do
-        @viewport.zoom_to(@viewport.zoom * 1.25_f32)
-      end
-
-      update_button(@btn_zoom_out) do
-        @viewport.zoom_to(@viewport.zoom / 1.25_f32)
-      end
-
-      update_button(@btn_zoom_reset) do
-        @viewport.zoom_to(1.0_f32)
-      end
-
-      update_button(@btn_pan_reset) do
-        @viewport.pan_x = 0_f32
-        @viewport.pan_y = 0_f32
-      end
-
-      update_button(@btn_clip_toggle) do
-        @viewport.clips_children = !@viewport.clips_children?
-        text_element = @btn_clip_toggle.children.first.as?(GSDL::UIText)
-        if text_element
-          text_element.text = "Clip: #{@viewport.clips_children? ? "ON" : "OFF"}"
-        end
-      end
-
-      # 5. Update Status bar text dynamically
+      # 4. Update Status bar text dynamically
       @status_pos.text = "Pan: #{@viewport.pan_x.round.to_i}, #{@viewport.pan_y.round.to_i}"
       @status_zoom.text = "Zoom: #{(@viewport.zoom * 100).round.to_i}%"
-    end
-
-    private def update_button(btn : GSDL::Canvas, &on_click_block)
-      if GSDL::Mouse.in?(btn.content_x, btn.content_y, btn.content_width, btn.content_height)
-        btn.background_color = AccentIndigo
-        if GSDL::Mouse.just_pressed?(GSDL::Mouse::ButtonLeft)
-          yield
-        end
-      else
-        btn.background_color = ButtonDefault
-      end
     end
 
     def draw_screen_overlay(draw : GSDL::Draw)

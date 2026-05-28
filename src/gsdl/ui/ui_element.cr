@@ -48,6 +48,9 @@ module GSDL
       draw_background(draw)
     end
 
+    def update(dt : Float32)
+    end
+
     def draw_background(draw : Draw)
       if (color = @background_color) && !color.transparent?
         draw.rect_fill(
